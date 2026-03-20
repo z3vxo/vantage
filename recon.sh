@@ -16,8 +16,5 @@ bash recon-files/subdomain2.sh "$DOMAIN"       || die "Stage 1 (passive enumerat
 bash recon-files/subdomains_active.sh "$DOMAIN" || die "Stage 2 (active DNS) failed"
 [[ -s subdomains/final_subs.txt ]]             || die "Stage 2 produced no resolved subdomains — aborting"
 
-bash recon-files/port_scan.sh "$DOMAIN"        || die "Stage 3 (port scan) failed"
-[[ -s "probe/port-scan/${DOMAIN}_domain_ips.json" ]] || die "Stage 3 produced no IP mappings — aborting"
-
-bash recon-files/alive_httpx_probe.sh "$DOMAIN" || die "Stage 4 (HTTP probe) failed"
+bash recon-files/alive_httpx_probe.sh "$DOMAIN" || die "Stage 3 (HTTP probe) failed"
 #python3 server/app.py

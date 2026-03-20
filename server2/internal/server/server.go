@@ -14,11 +14,17 @@ type NewTargetJson struct {
 	Domain string `json:"domain"`
 }
 
+type NoteStruct struct {
+	Domain string `json:"domain"`
+	Note   string `json:"notes"`
+}
+
 func Run() {
 	r := chi.NewRouter()
 
 	r.Get("/api/{domain}/hosts", HostHandler)
 	r.Get("/api/{domain}/hits", JuicyHandler)
+	r.Patch("/api/{domain}/notes", NotesHandler)
 	r.Post("/api/import/{domain}", ImportHandler)
 
 
@@ -44,6 +50,33 @@ func serveHTML(path string) http.HandlerFunc {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Write(content)
 	}
+}
+
+
+
+
+func NotesHandler(w http.ResponseWriter, r *http.Request) {
+	domain := chi.URLParam(r, "domain")
+	var data NoteStruct
+	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"status": "Failed to decode json"})
+		return
+	}
+
+	err := database.WriteNote(data.Domain, domain, data.Note)
+	if err != nil {
+		fmt.Println(err)
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(map[string]string{"status": "failed to insert"})
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"status": "Note added!"})
 }
 
 func HostHandler(w http.ResponseWriter, r *http.Request) {

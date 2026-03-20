@@ -4,336 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Recon Dashboard</title>
-<style>
-  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap');
-
-  :root {
-    --bg:         #0a0b0d;
-    --surface:    #0f1012;
-    --surface2:   #141618;
-    --border:     #1c1e21;
-    --border2:    #242628;
-    --text:       #d8dce3;
-    --text-muted: #4a5060;
-    --text-dim:   #7a8294;
-    --accent:     #ff6b35;
-    --accent-dim: #1f0e06;
-    --green:      #39d98a;
-    --green-dim:  #051a0e;
-    --orange:     #ffb020;
-    --orange-dim: #1f1500;
-    --red:        #f75555;
-    --red-dim:    #1f0808;
-    --yellow:     #f5e642;
-    --yellow-dim: #1a1900;
-    --panel-w:    440px;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: 'IBM Plex Sans', sans-serif;
-    background: var(--bg); color: var(--text);
-    font-size: 14px; line-height: 1.6;
-  }
-
-  /* ── Header ── */
-  .header {
-    background: #000; border-bottom: 2px solid var(--accent);
-    padding: 0 28px; display: flex; align-items: center; gap: 24px;
-    position: sticky; top: 0; z-index: 200; height: 52px;
-  }
-  .header-brand { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
-  .brand-name { font-size: 18px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
-  .brand-sub  { font-size: 11px; color: var(--accent); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 600; }
-  .header-divider { width: 1px; height: 20px; background: var(--border2); flex-shrink: 0; }
-  .header-date { font-size: 12px; color: var(--text-muted); font-family: 'Fira Code', monospace; flex: 1; }
-
-  /* ── Tabs ── */
-  .tabs { display: flex; border: 1px solid var(--border2); overflow: hidden; }
-  .tab-btn {
-    background: transparent; color: var(--text-muted); border: none; border-right: 1px solid var(--border2);
-    padding: 7px 20px; cursor: pointer;
-    font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; font-weight: 600;
-    display: flex; align-items: center; gap: 10px; transition: all 0.1s;
-    white-space: nowrap; text-transform: uppercase; letter-spacing: 0.08em;
-  }
-  .tab-btn:last-child { border-right: none; }
-  .tab-btn:hover { color: var(--text); background: var(--surface2); }
-  .tab-btn.active.tab-hosts { color: var(--accent); background: var(--accent-dim); border-bottom: 2px solid var(--accent); }
-  .tab-btn.active.tab-hits  { color: var(--orange); background: var(--orange-dim); border-bottom: 2px solid var(--orange); }
-  .tab-btn.active.tab-js    { color: var(--yellow); background: var(--yellow-dim); border-bottom: 2px solid var(--yellow); }
-  .tab-count {
-    font-size: 11px; font-weight: 700; padding: 1px 6px;
-    background: var(--border2); color: var(--text-dim);
-    font-family: 'Fira Code', monospace;
-  }
-  .tab-btn.active.tab-hosts .tab-count { background: #2a1008; color: var(--accent); }
-  .tab-btn.active.tab-hits  .tab-count { background: #1f1200; color: var(--orange); }
-  .tab-btn.active.tab-js    .tab-count { background: #1a1900; color: var(--yellow); }
-
-  /* ── Content ── */
-  .content { padding: 20px 28px; transition: margin-right 0.25s ease; }
-  .content.panel-open { margin-right: var(--panel-w); }
-  .page { display: none; }
-  .page.active { display: block; }
-
-  /* ── Stat cards ── */
-  .stats { display: flex; gap: 0; margin-bottom: 28px; flex-wrap: wrap; border: 1px solid var(--border); }
-  .stat-card {
-    padding: 16px 24px; min-width: 140px;
-    display: flex; flex-direction: column; gap: 4px;
-    border-right: 1px solid var(--border);
-    border-left: 3px solid var(--border2);
-  }
-  .stat-card:last-child { border-right: none; }
-  .stat-value { font-size: 36px; font-weight: 700; font-family: 'Fira Code', monospace; line-height: 1; }
-  .stat-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; }
-  .stat-card.ok     { border-left-color: var(--green);  } .stat-card.ok     .stat-value { color: var(--green); }
-  .stat-card.warn   { border-left-color: var(--orange); } .stat-card.warn   .stat-value { color: var(--orange); }
-  .stat-card.danger { border-left-color: var(--red);    } .stat-card.danger .stat-value { color: var(--red); }
-
-  /* ── Toolbar ── */
-  .toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
-  .search-wrap { position: relative; display: flex; align-items: center; }
-  .search-wrap svg { position: absolute; left: 10px; color: var(--text-muted); pointer-events: none; }
-  input[type=text] {
-    background: var(--surface); color: var(--text); border: 1px solid var(--border2);
-    padding: 7px 12px 7px 34px; width: 280px;
-    font-family: 'Fira Code', monospace; font-size: 12px; transition: border-color 0.15s;
-    border-radius: 0;
-  }
-  input[type=text]:focus { outline: none; border-color: var(--accent); }
-  input[type=text]::placeholder { color: var(--text-muted); }
-  .col-toggle { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; }
-  .col-toggle span { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; margin-right: 4px; }
-  .col-toggle button {
-    background: var(--surface); color: var(--text-muted); border: 1px solid var(--border2);
-    padding: 5px 12px; cursor: pointer;
-    font-size: 11px; font-family: 'IBM Plex Sans', sans-serif;
-    font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; transition: all 0.1s;
-    border-radius: 0;
-  }
-  .col-toggle button:hover  { color: var(--text); background: var(--surface2); }
-  .col-toggle button.active { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
-
-  /* ── Table ── */
-  .table-wrap { border: 1px solid var(--border); overflow: hidden; margin-bottom: 28px; }
-  table { width: 100%; border-collapse: collapse; table-layout: fixed; }
-  thead { background: #000; }
-  th {
-    color: var(--text-muted); text-align: left; padding: 9px 14px;
-    cursor: pointer; user-select: none; white-space: nowrap; overflow: hidden;
-    font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em;
-    border-bottom: 1px solid var(--border2); transition: color 0.1s;
-  }
-  th:hover { color: var(--accent); }
-  th .sort-icon { opacity: 0.3; margin-left: 4px; }
-  td {
-    padding: 7px 14px; border-bottom: 1px solid var(--border);
-    font-size: 13px; vertical-align: middle; color: var(--text-dim);
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-  }
-  td:first-child { font-family: 'Fira Code', monospace; font-size: 12px; }
-  tbody tr:last-child td { border-bottom: none; }
-  tbody tr:hover td { background: var(--surface2); color: var(--text); }
-  tbody tr.selected td { background: var(--accent-dim) !important; border-left: 2px solid var(--accent); }
-
-  /* Status colours */
-  .s200, .s201 { color: var(--green)  !important; font-weight: 600; }
-  .s301, .s302 { color: var(--orange) !important; }
-  .s403        { color: var(--red)    !important; }
-  .s400        { color: var(--red)    !important; opacity: 0.7; }
-
-  a { color: var(--accent); text-decoration: none; }
-  a:hover { opacity: 0.75; }
-
-  /* ── Badges ── */
-  .badge {
-    display: inline-block; padding: 1px 6px;
-    font-size: 9px; font-weight: 700; margin-left: 6px; vertical-align: middle;
-    letter-spacing: 0.1em; text-transform: uppercase;
-  }
-  .badge-red    { background: var(--red-dim);    color: var(--red);    border: 1px solid var(--red); }
-  .badge-orange { background: var(--orange-dim); color: var(--orange); border: 1px solid var(--orange); }
-  .badge-yellow { background: var(--yellow-dim); color: var(--yellow); border: 1px solid var(--yellow); }
-
-  /* ── Hit severity ── */
-  .hit-high td:first-child { border-left: 3px solid var(--red); }
-  .hit-med  td:first-child { border-left: 3px solid var(--orange); }
-  .hit-info td:first-child { border-left: 3px solid var(--border2); }
-
-  /* ── Empty / loading state ── */
-  .empty-state {
-    text-align: center; padding: 48px 24px; color: var(--text-muted);
-    font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em;
-  }
-
-  /* ── Expand button ── */
-  .expand-btn {
-    background: transparent; border: 1px solid var(--border2); color: var(--text-muted);
-    font-size: 9px; font-weight: 700;
-    padding: 2px 7px; cursor: pointer; margin-left: 8px; vertical-align: middle;
-    transition: all 0.1s; letter-spacing: 0.08em; text-transform: uppercase; border-radius: 0;
-  }
-  .expand-btn:hover { color: var(--accent); border-color: var(--accent); }
-  .expand-btn.open  { color: var(--accent); border-color: var(--accent); background: var(--accent-dim); }
-  .child-row td { background: #000 !important; color: var(--text-muted); font-size: 12px; border-left: 2px solid var(--border2); }
-  .child-row:hover td { background: var(--surface) !important; color: var(--text) !important; }
-
-  /* ── Detail Panel ── */
-  .panel-overlay { display: none; position: fixed; inset: 0; z-index: 299; }
-  .panel-overlay.open { display: block; }
-  .detail-panel {
-    position: fixed; top: 0; right: 0; bottom: 0;
-    width: var(--panel-w); background: var(--surface);
-    border-left: 2px solid var(--accent);
-    z-index: 300; display: flex; flex-direction: column;
-    transform: translateX(100%); transition: transform 0.2s ease;
-    box-shadow: -12px 0 40px rgba(0,0,0,0.6);
-  }
-  .detail-panel.open { transform: translateX(0); }
-  .panel-header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 14px 20px; border-bottom: 1px solid var(--border2); flex-shrink: 0;
-    background: #000;
-  }
-  .panel-title { font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: 0.12em; }
-  .panel-close {
-    background: none; border: 1px solid var(--border2); cursor: pointer; color: var(--text-muted);
-    padding: 3px 6px; display: flex; align-items: center; transition: all 0.1s;
-  }
-  .panel-close:hover { color: var(--text); border-color: var(--text-muted); }
-  .panel-url { padding: 14px 20px; border-bottom: 1px solid var(--border2); flex-shrink: 0; }
-  .panel-url a { font-family: 'Fira Code', monospace; font-size: 12px; color: var(--accent); word-break: break-all; }
-  .panel-body { flex: 1; overflow-y: auto; padding: 4px 0; }
-  .panel-section { padding: 10px 20px; }
-  .panel-section-label {
-    font-size: 9px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.12em; color: var(--text-muted); margin-bottom: 6px;
-  }
-  .panel-section-value { font-size: 14px; color: var(--text); word-break: break-word; line-height: 1.6; }
-  .panel-section-value.mono { font-family: 'Fira Code', monospace; font-size: 12px; }
-  .panel-divider { height: 1px; background: var(--border); margin: 2px 0; }
-  .tech-pill {
-    display: inline-block; background: var(--surface2); border: 1px solid var(--border2);
-    padding: 3px 8px; font-size: 12px; color: var(--text-dim);
-    margin: 2px 3px 2px 0; border-radius: 0;
-  }
-  .status-val { font-family: 'Fira Code', monospace; font-weight: 600; font-size: 18px; }
-
-  /* ── Triage + Notes ── */
-  .triage-btns { display: flex; gap: 6px; flex-wrap: wrap; }
-  .triage-btn {
-    background: transparent; border: 1px solid var(--border2);
-    color: var(--text-muted); padding: 4px 12px; cursor: pointer;
-    font-size: 10px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.08em; font-family: 'IBM Plex Sans', sans-serif;
-    transition: all 0.1s; border-radius: 0;
-  }
-  .triage-btn:hover { color: var(--text); border-color: var(--text-muted); }
-  .triage-btn.active[data-status="to-test"]  { color: var(--orange); border-color: var(--orange); background: var(--orange-dim); }
-  .triage-btn.active[data-status="dead-end"] { color: var(--red);    border-color: var(--red);    background: var(--red-dim); }
-  .triage-btn.active[data-status="tested"]   { color: var(--green);  border-color: var(--green);  background: var(--green-dim); }
-  .triage-btn.active[data-status="none"]     { color: var(--text-muted); border-color: var(--border2); }
-
-  .notes-area {
-    width: 100%; background: var(--bg); color: var(--text);
-    border: 1px solid var(--border2); padding: 10px 12px;
-    font-family: 'Fira Code', monospace; font-size: 12px;
-    line-height: 1.6; resize: vertical; min-height: 90px;
-    transition: border-color 0.15s; border-radius: 0; outline: none;
-  }
-  .notes-area:focus { border-color: var(--accent); }
-  .notes-area::placeholder { color: var(--text-muted); }
-  .notes-save {
-    margin-top: 8px; background: transparent; border: 1px solid var(--border2);
-    color: var(--text-muted); padding: 5px 14px; cursor: pointer;
-    font-size: 11px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.08em; font-family: 'IBM Plex Sans', sans-serif;
-    transition: all 0.1s; border-radius: 0; float: right;
-  }
-  .notes-save:hover { color: var(--accent); border-color: var(--accent); }
-
-  /* ── JS Analysis ── */
-  .js-domain-row { cursor: pointer; }
-  .js-domain-row td { border-bottom: 1px solid var(--border); }
-  .js-domain-row:hover td { background: var(--surface2); color: var(--text); }
-  .js-domain-row.open td { background: var(--surface2); border-bottom: none; }
-
-  .js-expand-area { display: none; }
-  .js-expand-area.open { display: table-row-group; }
-
-  .js-expand-inner td {
-    background: #000 !important;
-    padding: 0 !important;
-    border-bottom: 1px solid var(--border2);
-  }
-  .js-section { padding: 12px 20px 12px 40px; }
-  .js-section-title {
-    font-size: 10px; font-weight: 700; text-transform: uppercase;
-    letter-spacing: 0.12em; color: var(--text-muted); margin-bottom: 8px;
-    display: flex; align-items: center; gap: 8px;
-  }
-  .js-section-title .count-pill {
-    font-family: 'Fira Code', monospace; font-size: 10px;
-    background: var(--border2); color: var(--text-dim);
-    padding: 1px 6px;
-  }
-  .js-sub-table { width: 100%; border-collapse: collapse; margin-bottom: 8px; }
-  .js-sub-table td {
-    padding: 5px 12px !important; font-size: 12px;
-    color: var(--text-dim); border-bottom: 1px solid var(--border) !important;
-    background: var(--surface) !important;
-  }
-  .js-sub-table td:first-child { font-family: 'Fira Code', monospace; color: var(--text); }
-  .js-sub-table tr:last-child td { border-bottom: none !important; }
-  .js-sub-table tr:hover td { background: var(--surface2) !important; }
-  .js-loading { padding: 16px 20px 16px 40px; color: var(--text-muted); font-size: 12px; }
-
-  .sev-high   { color: var(--red) !important; }
-  .sev-medium { color: var(--orange) !important; }
-  .sev-low    { color: var(--yellow) !important; }
-
-  /* ── Toast ── */
-  .toast {
-    position: fixed; top: 64px; right: 28px; z-index: 500;
-    padding: 16px 24px; font-size: 14px; font-weight: 600;
-    border-left: 3px solid; display: flex; align-items: center; gap: 10px;
-    opacity: 0; transform: translateY(-8px);
-    transition: opacity 0.2s ease, transform 0.2s ease;
-    pointer-events: none; max-width: 380px;
-  }
-  .toast.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
-  .toast.success { background: var(--surface); border-color: var(--green); color: var(--green); }
-  .toast.error   { background: var(--surface); border-color: var(--red);   color: var(--red); }
-  .toast-msg { color: var(--text); font-weight: 400; }
-
-  /* ── Import button ── */
-  .btn-import {
-    background: transparent; color: var(--green); border: 1px solid var(--green);
-    padding: 5px 14px; cursor: pointer; font-size: 11px; font-weight: 700;
-    font-family: 'IBM Plex Sans', sans-serif; text-transform: uppercase;
-    letter-spacing: 0.08em; transition: all 0.1s; border-radius: 0;
-    display: flex; align-items: center; gap: 6px;
-  }
-  .btn-import:hover:not(:disabled) { background: var(--green-dim); }
-  .btn-import:disabled { opacity: 0.4; cursor: not-allowed; }
-  .btn-import.loading { color: var(--text-muted); border-color: var(--border2); }
-  .btn-import.error   { color: var(--red);   border-color: var(--red); }
-
-  .import-status {
-    display: none; align-items: center; gap: 8px;
-    font-size: 12px; color: var(--text-muted);
-    font-family: 'Fira Code', monospace;
-  }
-  .import-status.visible { display: flex; }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .spinner {
-    width: 13px; height: 13px; border: 2px solid var(--border2);
-    border-top-color: var(--accent); border-radius: 50%;
-    animation: spin 0.7s linear infinite; flex-shrink: 0;
-  }
-</style>
+<link rel="stylesheet" href="/css/dashboard.css">
 </head>
 <body>
 
@@ -359,6 +30,9 @@
     <button class="tab-btn tab-js" id="tab-js" onclick="showTab('js')">
       JS Analysis <span class="tab-count" id="count-js">—</span>
     </button>
+    <button class="tab-btn tab-overview" id="tab-overview" onclick="showTab('overview')">
+      Overview <span class="tab-count" id="count-overview">—</span>
+    </button>
   </div>
 </div>
 
@@ -367,9 +41,12 @@
 <div id="detail-panel" class="detail-panel">
   <div class="panel-header">
     <span class="panel-title">Host Details</span>
-    <button class="panel-close" onclick="closePanel()">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="panel-ov-btn" onclick="openInOverview()">Overview ↗</button>
+      <button class="panel-close" onclick="closePanel()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
   </div>
   <div class="panel-url" id="panel-url"></div>
   <div class="panel-body" id="panel-body"></div>
@@ -396,6 +73,7 @@
         <button onclick="toggleCol('t-hosts',7,this)" class="active">CNAME</button>
         <button onclick="toggleCol('t-hosts',8,this)" class="active">Content-Type</button>
       </div>
+      <button class="expand-btn" style="font-size:11px;padding:5px 12px" onclick="collapseAll('tbody-hosts','data-group')">&#9650; Collapse All</button>
       <button class="btn-import" id="btn-import-hosts" onclick="importData(this, 'import-status-hosts')">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Import
@@ -436,6 +114,7 @@
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input type="text" id="search-hits" placeholder="Filter paths..." oninput="filterTable('search-hits','tbody-hits')">
       </div>
+      <button class="expand-btn" style="font-size:11px;padding:5px 12px" onclick="collapseAll('tbody-hits','data-hit-group')">&#9650; Collapse All</button>
       <button class="btn-import" id="btn-import-hits" onclick="importData(this, 'import-status-hits')">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         Import
@@ -460,6 +139,23 @@
           <tr><td colspan="4"><div class="empty-state">Loading...</div></td></tr>
         </tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- Overview tab -->
+  <div class="page" id="page-overview">
+    <div class="overview-layout">
+      <div class="overview-sidebar">
+        <div class="sidebar-search-wrap">
+          <input type="text" id="search-overview" placeholder="Filter hosts..." oninput="filterOverviewSidebar()">
+        </div>
+        <div class="sidebar-list" id="overview-sidebar-list">
+          <div class="overview-empty-msg" style="min-height:120px">No hosts loaded</div>
+        </div>
+      </div>
+      <div class="overview-main" id="overview-main">
+        <div class="overview-empty-msg">← Select a host from the sidebar</div>
+      </div>
     </div>
   </div>
 
@@ -497,455 +193,17 @@
   <span class="toast-msg" id="toast-msg"></span>
 </div>
 
+<script src="/js/utils.js"></script>
+<script src="/js/panel.js"></script>
+<script src="/js/hosts.js"></script>
+<script src="/js/hits.js"></script>
+<script src="/js/overview.js"></script>
+<script src="/js/js-tab.js"></script>
 <script>
-  // ── Date ──
-  document.getElementById('header-date').textContent = new Date().toLocaleString();
-
-  // ── Tab switching ──
-  function showTab(name) {
-    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById('page-' + name).classList.add('active');
-    document.getElementById('tab-' + name).classList.add('active');
-  }
-
-  // ── Filter ──
-  function filterTable(inputId, tbodyId) {
-    const q = document.getElementById(inputId).value.toLowerCase();
-    document.querySelectorAll('#' + tbodyId + ' tr').forEach(r => {
-      r.style.display = r.innerText.toLowerCase().includes(q) ? '' : 'none';
-    });
-  }
-
-  // ── Sort ──
-  function sortTable(tableId, col) {
-    const table = document.getElementById(tableId);
-    const rows  = Array.from(table.querySelectorAll('tbody tr'));
-    const dir   = table.dataset.sortDir === 'asc' ? -1 : 1;
-    table.dataset.sortDir = dir === 1 ? 'asc' : 'desc';
-    rows.sort((a, b) => {
-      const A = a.cells[col]?.innerText.trim() || '';
-      const B = b.cells[col]?.innerText.trim() || '';
-      return A.localeCompare(B, undefined, {numeric: true}) * dir;
-    });
-    rows.forEach(r => table.querySelector('tbody').appendChild(r));
-  }
-
-  // ── Toggle column ──
-  function toggleCol(tableId, col, btn) {
-    const table = document.getElementById(tableId);
-    const cells = table.querySelectorAll('tr td:nth-child(' + (col+1) + '), tr th:nth-child(' + (col+1) + ')');
-    btn.classList.toggle('active');
-    const isHidden = cells[0]?.style.display === 'none';
-    cells.forEach(c => c.style.display = isHidden ? '' : 'none');
-  }
-
-  // ── Expand/collapse child rows ──
-  function toggleGroup(event, groupId) {
-    event.stopPropagation();
-    const btn  = event.currentTarget;
-    const rows = document.querySelectorAll(`tr[data-group="${groupId}"]`);
-    const isOpen = btn.classList.toggle('open');
-    rows.forEach(r => r.style.display = isOpen ? '' : 'none');
-    btn.innerHTML = isOpen
-      ? `&#9660; ${rows.length + 1} ports`
-      : `&#9654; ${rows.length + 1} ports`;
-  }
-
-  // ── Detail panel ──
-  let activeRow = null;
-
-  function openPanel(row) {
-    const d = JSON.parse(row.dataset.host);
-    if (activeRow) activeRow.classList.remove('selected');
-    activeRow = row;
-    row.classList.add('selected');
-
-    const scMap = {s200:'var(--green)',s201:'var(--green)',s301:'var(--orange)',s302:'var(--orange)',s403:'var(--red)',s400:'var(--red)'};
-    const statusColor = scMap[d.sc] || 'var(--text)';
-
-    const techHtml = d.tech && d.tech.length
-      ? d.tech.map(t => `<span class="tech-pill">${t}</span>`).join('')
-      : '<span style="color:var(--text-muted)">—</span>';
-
-    const portsHtml = d.ports && d.ports.length
-      ? d.ports.map(p => `<span class="tech-pill"><span style="color:var(--accent);font-weight:600">${p.port}</span> <span style="color:var(--text-muted)">— ${p.service}</span></span>`).join('')
-      : '<span style="color:var(--text-muted)">—</span>';
-
-    const val = v => (v && v !== '-' && !(Array.isArray(v) && !v.length))
-      ? (Array.isArray(v) ? v.join(', ') : v)
-      : '<span style="color:var(--text-muted)">—</span>';
-
-    document.getElementById('panel-url').innerHTML = `<a href="${d.url}" target="_blank">${d.url}</a>`;
-    document.getElementById('panel-body').innerHTML = `
-      <div class="panel-section">
-        <div class="panel-section-label">Status</div>
-        <div class="panel-section-value"><span class="status-val" style="color:${statusColor}">${d.status}</span></div>
-      </div>
-      <div class="panel-divider"></div>
-      <div class="panel-section">
-        <div class="panel-section-label">Title</div>
-        <div class="panel-section-value">${val(d.title)}</div>
-      </div>
-      <div class="panel-divider"></div>
-      <div class="panel-section">
-        <div class="panel-section-label">Server</div>
-        <div class="panel-section-value mono">${val(d.server)}</div>
-      </div>
-      <div class="panel-divider"></div>
-      <div class="panel-section">
-        <div class="panel-section-label">Tech Stack</div>
-        <div class="panel-section-value">${techHtml}</div>
-      </div>
-      <div class="panel-divider"></div>
-      <div class="panel-section">
-        <div class="panel-section-label">Open Ports</div>
-        <div class="panel-section-value">${portsHtml}</div>
-      </div>
-      <div class="panel-divider"></div>
-      <div class="panel-section">
-        <div class="panel-section-label">IP Address(es)</div>
-        <div class="panel-section-value mono">${val(d.ips)}</div>
-      </div>
-      <div class="panel-divider"></div>
-      <div class="panel-section">
-        <div class="panel-section-label">CNAME</div>
-        <div class="panel-section-value mono">${val(d.cname)}</div>
-      </div>
-      <div class="panel-divider"></div>
-      <div class="panel-section">
-        <div class="panel-section-label">Content-Type</div>
-        <div class="panel-section-value mono">${val(d.ctype)}</div>
-      </div>
-      <div class="panel-divider"></div>
-      <div class="panel-section">
-        <div class="panel-section-label">Triage</div>
-        <div class="triage-btns">
-          ${['none','to-test','dead-end','tested'].map(s => `
-            <button class="triage-btn ${(d.triage_status||'none')===s?'active':''}" data-status="${s}" onclick="setTriage(this,'${escHtml(d.domain_name)}','${s}')">${s}</button>
-          `).join('')}
-        </div>
-      </div>
-      <div class="panel-divider"></div>
-      <div class="panel-section">
-        <div class="panel-section-label">Notes</div>
-        <textarea class="notes-area" id="panel-notes" placeholder="e.g. takes URL param at /search, worth testing...">${escHtml(d.notes||'')}</textarea>
-        <button class="notes-save" onclick="saveNotes('${escHtml(d.domain_name)}')">Save</button>
-      </div>
-    `;
-
-    document.getElementById('detail-panel').classList.add('open');
-    document.getElementById('panel-overlay').classList.add('open');
-    document.querySelector('.content').classList.add('panel-open');
-  }
-
-  function closePanel() {
-    document.getElementById('detail-panel').classList.remove('open');
-    document.getElementById('panel-overlay').classList.remove('open');
-    document.querySelector('.content').classList.remove('panel-open');
-    if (activeRow) { activeRow.classList.remove('selected'); activeRow = null; }
-  }
-
-  document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
-
-  // ── Render helpers ──
-  function escHtml(s) {
-    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-
-  function renderBadges(badges) {
-    const map = { interesting: 'badge-orange', api: 'badge-yellow' };
-    return (badges || []).map(b => `<span class="badge ${map[b] || 'badge-yellow'}">${b}</span>`).join('');
-  }
-
-  // ── Load hosts ──
-  function loadHosts() {
-    const domain = localStorage.getItem('recon_target');
-    fetch(`/api/${encodeURIComponent(domain)}/hosts`)
-      .then(r => r.json())
-      .then(data => {
-        const { stats, hosts } = data;
-
-        document.getElementById('stat-total').textContent = stats.total;
-        document.getElementById('stat-200').textContent   = stats.s200;
-        document.getElementById('stat-403').textContent   = stats.s403;
-        document.getElementById('stat-500').textContent   = stats.s500;
-        document.getElementById('count-hosts').textContent = stats.total;
-
-        const tbody = document.getElementById('tbody-hosts');
-        if (!hosts.length) {
-          tbody.innerHTML = `<tr><td colspan="9"><div class="empty-state">No hosts found.</div></td></tr>`;
-          return;
-        }
-
-        let html = '';
-        hosts.forEach((h, gid) => {
-          const portsShort = h.ports.map(p => p.port).join(', ') || '-';
-          const techStr    = h.tech.join(', ') || '-';
-          const ipsStr     = h.ips.join(', ')  || '-';
-          const cnameStr   = h.cname.join(', ') || '-';
-          const hostData   = escHtml(JSON.stringify(h));
-          const multi      = h.children && h.children.length > 0;
-          const expandBtn  = multi
-            ? `<button class="expand-btn" onclick="toggleGroup(event,${gid})">&#9654; ${h.children.length + 1} ports</button>`
-            : '';
-
-          html += `
-            <tr onclick="openPanel(this)" data-host="${hostData}" class="primary-row" style="cursor:pointer">
-              <td><a href="${escHtml(h.url)}" target="_blank" onclick="event.stopPropagation()">${escHtml(h.url)}</a>${renderBadges(h.badges)}${expandBtn}</td>
-              <td class="${h.sc}">${h.status}</td>
-              <td>${escHtml(h.title)}</td>
-              <td>${escHtml(h.server)}</td>
-              <td>${escHtml(techStr)}</td>
-              <td>${escHtml(portsShort)}</td>
-              <td>${escHtml(ipsStr)}</td>
-              <td>${escHtml(cnameStr)}</td>
-              <td>${escHtml(h.ctype)}</td>
-            </tr>`;
-
-          if (multi) {
-            h.children.forEach(c => {
-              const cData = escHtml(JSON.stringify(c));
-              html += `
-                <tr onclick="openPanel(this)" data-host="${cData}" data-group="${gid}" class="child-row" style="display:none;cursor:pointer">
-                  <td style="padding-left:28px"><a href="${escHtml(c.url)}" target="_blank" onclick="event.stopPropagation()">${escHtml(c.url)}</a></td>
-                  <td class="${c.sc}">${c.status}</td>
-                  <td>${escHtml(c.title)}</td>
-                  <td colspan="6"></td>
-                </tr>`;
-            });
-          }
-        });
-
-        tbody.innerHTML = html;
-      })
-      .catch(err => {
-        document.getElementById('tbody-hosts').innerHTML =
-          `<tr><td colspan="9"><div class="empty-state">Error loading hosts: ${err.message}</div></td></tr>`;
-      });
-  }
-
-  // ── Load hits ──
-  function loadHits() {
-    const domain = localStorage.getItem('recon_target');
-    fetch(`/api/${encodeURIComponent(domain)}/hits`)
-      .then(r => r.json())
-      .then(data => {
-        const { hits } = data;
-        document.getElementById('count-hits').textContent = hits.length;
-
-        const tbody = document.getElementById('tbody-hits');
-        if (!hits.length) {
-          tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state">No path hits found.</div></td></tr>`;
-          return;
-        }
-
-        const sevBadge = { high: 'badge-red', medium: 'badge-orange', info: 'badge-yellow' };
-        tbody.innerHTML = hits.map(h => `
-          <tr class="hit-${h.severity}">
-            <td><a href="${escHtml(h.url)}" target="_blank">${escHtml(h.url)}</a></td>
-            <td class="${h.sc}">${h.status}</td>
-            <td>${h.size}</td>
-            <td><span class="badge ${sevBadge[h.severity] || 'badge-yellow'}">${h.severity}</span></td>
-          </tr>`).join('');
-      });
-  }
-
-  // ── JS Analysis ──
-  function loadJS() {
-    fetch('/api/js')
-      .then(r => r.json())
-      .then(data => {
-        const { domains } = data;
-        document.getElementById('count-js').textContent = domains.length;
-
-        const tbody = document.getElementById('tbody-js');
-        if (!domains.length) {
-          tbody.innerHTML = `<tr><td colspan="4"><div class="empty-state">No JS analysis data found.</div></td></tr>`;
-          return;
-        }
-
-        const sevBadge = { high: 'badge-red', medium: 'badge-orange', low: 'badge-yellow', none: '' };
-        const sevClass = { high: 'sev-high', medium: 'sev-medium', low: 'sev-low', none: '' };
-
-        let html = '';
-        domains.forEach((d, i) => {
-          const badge = d.severity !== 'none'
-            ? `<span class="badge ${sevBadge[d.severity]}">${d.severity}</span>`
-            : '<span style="color:var(--text-muted)">—</span>';
-
-          html += `
-            <tr class="js-domain-row" onclick="toggleJSDomain(${i}, '${escHtml(d.domain)}', this)">
-              <td>
-                <span class="expand-btn" id="js-arrow-${i}">&#9654;</span>
-                <span style="font-family:'Fira Code',monospace; margin-left:8px">${escHtml(d.domain)}</span>
-              </td>
-              <td style="color:var(--text)">${d.endpoint_count}</td>
-              <td class="${sevClass[d.severity]}">${d.secret_count}</td>
-              <td>${badge}</td>
-            </tr>
-            <tr id="js-detail-${i}" style="display:none">
-              <td colspan="4" style="padding:0; background:#000; border-bottom:1px solid var(--border2)">
-                <div id="js-loading-${i}" style="padding:12px 20px; color:var(--text-muted); font-size:12px">Loading...</div>
-              </td>
-            </tr>`;
-        });
-
-        tbody.innerHTML = html;
-      });
-  }
-
-  function toggleJSDomain(id, domain, row) {
-    const detailRow = document.getElementById(`js-detail-${id}`);
-    const arrow     = document.getElementById(`js-arrow-${id}`);
-    const isOpen    = detailRow.style.display !== 'none';
-
-    if (isOpen) {
-      detailRow.style.display = 'none';
-      arrow.innerHTML = '&#9654;';
-      arrow.classList.remove('open');
-      row.classList.remove('open');
-      document.getElementById(`js-loading-${id}`).innerHTML = 'Loading...';
-      return;
-    }
-
-    detailRow.style.display = '';
-    arrow.innerHTML = '&#9660;';
-    arrow.classList.add('open');
-    row.classList.add('open');
-
-    fetch(`/api/js/${encodeURIComponent(domain)}`)
-      .then(r => r.json())
-      .then(data => {
-        const { endpoints, secrets } = data;
-
-        const sevBadge  = { high: 'badge-red', medium: 'badge-orange', low: 'badge-yellow' };
-        const sevClass  = { high: 'sev-high',  medium: 'sev-medium',   low: 'sev-low' };
-
-        const endpointRows = endpoints.length
-          ? endpoints.map(e => `
-              <tr>
-                <td>${escHtml(e.endpoint)}</td>
-                <td style="color:var(--text-muted)">${escHtml(e.source)}</td>
-              </tr>`).join('')
-          : `<tr><td colspan="2" style="color:var(--text-muted)">No endpoints found</td></tr>`;
-
-        const secretRows = secrets.length
-          ? secrets.map(s => `
-              <tr>
-                <td class="${sevClass[s.severity] || ''}">${escHtml(s.type)}</td>
-                <td style="font-family:'Fira Code',monospace; max-width:300px; overflow:hidden; text-overflow:ellipsis">${escHtml(s.match)}</td>
-                <td style="color:var(--text-muted)">${escHtml(s.source)}</td>
-                <td><span class="badge ${sevBadge[s.severity] || 'badge-yellow'}">${s.severity}</span></td>
-              </tr>`).join('')
-          : `<tr><td colspan="4" style="color:var(--text-muted)">No secrets found</td></tr>`;
-
-        document.getElementById(`js-loading-${id}`).innerHTML = `
-          <div class="js-section">
-            <div class="js-section-title">
-              Endpoints <span class="count-pill">${endpoints.length}</span>
-            </div>
-            <table class="js-sub-table">
-              <colgroup><col style="width:55%"><col style="width:45%"></colgroup>
-              <tbody>${endpointRows}</tbody>
-            </table>
-          </div>
-          <div class="js-section" style="border-top:1px solid var(--border2)">
-            <div class="js-section-title">
-              Secrets <span class="count-pill">${secrets.length}</span>
-            </div>
-            <table class="js-sub-table">
-              <colgroup><col style="width:20%"><col style="width:45%"><col style="width:20%"><col style="width:15%"></colgroup>
-              <tbody>${secretRows}</tbody>
-            </table>
-          </div>`;
-      })
-      .catch(err => {
-        document.getElementById(`js-loading-${id}`).textContent = `Error: ${err.message}`;
-      });
-  }
-
-  // ── Toast ──
-  let toastTimer = null;
-  function showToast(type, msg) {
-    const toast = document.getElementById('toast');
-    const icon  = document.getElementById('toast-icon');
-    const text  = document.getElementById('toast-msg');
-    icon.textContent  = type === 'success' ? '✓' : '✕';
-    text.textContent  = msg;
-    toast.className   = `toast ${type} visible`;
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toast.classList.remove('visible'), 3500);
-  }
-
-  // ── Triage ──
-  function setTriage(btn, domainName, status) {
-    const domain = localStorage.getItem('recon_target');
-    fetch(`/api/domains/${encodeURIComponent(domainName)}/triage`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ domain, status }),
-    }).then(r => {
-      if (!r.ok) return;
-      btn.closest('.triage-btns').querySelectorAll('.triage-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-    });
-  }
-
-  // ── Notes ──
-  function saveNotes(domainName) {
-    const domain = localStorage.getItem('recon_target');
-    const notes  = document.getElementById('panel-notes').value;
-    fetch(`/api/domains/${encodeURIComponent(domainName)}/notes`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ domain, notes }),
-    }).then(r => {
-      if (!r.ok) return;
-      const btn = document.querySelector('.notes-save');
-      const orig = btn.textContent;
-      btn.textContent = 'Saved';
-      btn.style.color = 'var(--green)';
-      btn.style.borderColor = 'var(--green)';
-      setTimeout(() => { btn.textContent = orig; btn.style.color = ''; btn.style.borderColor = ''; }, 1500);
-    });
-  }
-
-  // ── Import ──
-  function importData(btn, statusId) {
-    const domain = localStorage.getItem('recon_target');
-    if (!domain) return;
-
-    const status = document.getElementById(statusId);
-    btn.disabled = true;
-    btn.classList.add('loading');
-    status.classList.add('visible');
-
-    fetch(`/api/import/${encodeURIComponent(domain)}`, { method: 'POST' })
-      .then(r => {
-        if (!r.ok) return r.text().then(t => { throw new Error(t); });
-        return r.json();
-      })
-      .then(() => {
-        status.classList.remove('visible');
-        btn.classList.remove('loading');
-        btn.disabled = false;
-        showToast('success', 'Data imported successfully!');
-        loadHosts();
-        loadHits();
-      })
-      .catch(err => {
-        status.classList.remove('visible');
-        btn.classList.remove('loading');
-        btn.disabled = false;
-        showToast('error', 'Error importing data: ' + err.message);
-      });
-  }
-
-  // ── Init ──
   loadHosts();
   loadHits();
   loadJS();
 </script>
+
 </body>
 </html>

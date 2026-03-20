@@ -1,0 +1,61 @@
+// package database
+
+// import (
+//     "database/sql"
+//     "os"
+//     _ "github.com/mattn/go-sqlite3"
+// )
+
+
+// // Handles creating new target database
+// func CreateNewTarget(name string) error {
+//     fullFileName := "./databases/" + name + "_db.sql"
+
+//     if _, err := os.Stat(fullFileName); err == nil {
+//         return ErrDomainExists
+//     }
+
+//     db, err := sql.Open("sqlite3", fullFileName)
+//     if err != nil {
+//         fmt.Println(err)
+//         return err
+//     }
+
+//     mu.Lock()
+//     connections[name] = db
+//     mu.Unlock()
+
+//     _, err = db.Exec(`CREATE TABLE IF NOT EXISTS domains (
+//         id           INTEGER PRIMARY KEY AUTOINCREMENT,
+//         domain_name  TEXT UNIQUE,
+//         status_code  TEXT,
+//         open_ports   TEXT,
+//         title        TEXT,
+//         tech_stack   TEXT,
+//         content_type TEXT,
+//         server       TEXT,
+//         ips          TEXT,
+//         cname        TEXT,
+//         badges        TEXT,
+//         triage_status TEXT NOT NULL DEFAULT '',
+//         notes         TEXT NOT NULL DEFAULT ''
+//     );`)
+//     if err != nil {
+//         fmt.Println(err)
+//         return err
+//     }
+
+//     _, err = db.Exec(`CREATE TABLE IF NOT EXISTS juicy_hits (
+//         id          INTEGER PRIMARY KEY AUTOINCREMENT,
+//         url         TEXT UNIQUE,
+//         status_code TEXT,
+//         size        TEXT,
+//         severity    TEXT
+//     );`)
+//     if err != nil {
+//         fmt.Println(err)
+//         return err
+//     }
+
+//     return nil
+// }

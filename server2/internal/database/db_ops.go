@@ -112,3 +112,18 @@ func ImportData(domain string) error {
 	return nil
 }
 
+func WriteNote(target string, hostURL string, note string) error {
+    db, err := getDB(target)
+    if err != nil {
+        fmt.Println(err)
+        return err
+    }
+
+    _, err = db.Exec("UPDATE domains SET notes = ? WHERE domain_name = ?", note, hostURL)
+    if err != nil {
+        fmt.Println(err)
+        return err
+    }
+
+    return nil
+}

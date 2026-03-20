@@ -119,6 +119,8 @@ resolve__permuated_dns() {
 
 
 mkdir -p "$active_dir"
+rm -f "$active_dir/resolved.txt" "$active_dir/mutated.txt" "$active_dir/puredns.txt"
+rm -f "$subs_dir/final_subs.txt"
 check_tools
 [[ -s "$subs_dir/all_subs.txt" ]] \
     || { echo -e "${BOLD}${RED}[!]${ENDCOLOR} all_subs.txt is empty — run subdomain2.sh first" >&2; exit 1; }

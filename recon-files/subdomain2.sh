@@ -85,6 +85,8 @@ fi
 
 url=$1
 mkdir -p "$passive_dir"
+rm -f "$passive_dir/subfinder.txt" "$passive_dir/crt_subs.txt" "$passive_dir/gitsubs.txt"
+rm -f "$subs_dir/all_subs.txt"
 
 # ─── Main ─────────────────────────────────────────────────────────────────────
 check_tools
