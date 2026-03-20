@@ -26,6 +26,7 @@ func Run() {
 	r.Get("/api/{domain}/hits", JuicyHandler)
 	r.Patch("/api/{domain}/notes", NotesHandler)
 	r.Post("/api/import/{domain}", ImportHandler)
+	//r.Patch("/api/{domain}/traige", TriageHandler)
 
 
 	r.Post("/api/targets/new", NewTargetHandler)
@@ -35,8 +36,20 @@ func Run() {
 	r.Get("/index.html", serveHTML("static/index.html"))
 	r.Get("/*", serveHTML("static/target.html"))
 
+	// Wrap Chi so static assets are served before route matching.
+	// Keeps /css/* and /js/* working regardless of Chi route changes.
+	fs := http.FileServer(http.Dir("static"))
+	handler := http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		p := req.URL.Path
+		if strings.HasPrefix(p, "/css/") || strings.HasPrefix(p, "/js/") {
+			fs.ServeHTTP(w, req)
+			return
+		}
+		r.ServeHTTP(w, req)
+	})
+
 	fmt.Println("[+] Server running on http://127.0.0.1:8080")
-	http.ListenAndServe(":8080", r)
+	http.ListenAndServe(":8080", handler)
 }
 
 
@@ -53,10 +66,15 @@ func serveHTML(path string) http.HandlerFunc {
 }
 
 
+// func TriageHandler(w http.ResponseWriter, r *http.Request) {
+// 	domain := chi.URLParam(r, "domain")
+
+
+// }
 
 
 func NotesHandler(w http.ResponseWriter, r *http.Request) {
-	domain := chi.URLParam(r, "domain")
+	//domain := chi.URLParam(r, "domain")
 	var data NoteStruct
 	if err := json.NewDecoder(r.Body).Decode(&data); err != nil {
 		w.Header().Set("Content-Type", "application/json")
@@ -65,7 +83,8 @@ func NotesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err := database.WriteNote(data.Domain, domain, data.Note)
+	hostURL := chi.URLParam(r, "domain")
+	err := database.WriteNote(data.Domain, hostURL, data.Note)
 	if err != nil {
 		fmt.Println(err)
 

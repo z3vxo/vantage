@@ -241,7 +241,7 @@ a:hover { opacity: 0.75; }
   width: 100%; background: var(--bg); color: var(--text);
   border: 1px solid var(--border2); padding: 10px 12px;
   font-family: 'Fira Code', monospace; font-size: 12px;
-  line-height: 1.6; resize: vertical; min-height: 90px;
+  line-height: 1.6; resize: vertical; min-height: 160px;
   transition: border-color 0.15s; border-radius: 0; outline: none;
 }
 .notes-area:focus { border-color: var(--accent); }
