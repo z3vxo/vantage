@@ -9,7 +9,9 @@ import (
 	"strings"
 
 	"github.com/execute-assembly/recon-dashboard/internal/database"
+	"github.com/execute-assembly/recon-dashboard/internal/tools"
 	"github.com/go-chi/chi/v5"
+	"github.com/google/uuid"
 )
 
 type TriageData struct {
@@ -176,6 +178,11 @@ func deleteTargetHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func ScreenShot_Handler(w http.ResponseWriter, r *http.Request) {
-	domain := chi.URLParam(r, "domain")
+	//domain := chi.URLParam(r, "domain")
 	hostURL, _ := url.QueryUnescape(chi.URLParam(r, "hostURL"))
+
+	id := uuid.NewString()
+
+	go tools.Screenshot(hostURL, id)
+
 }
