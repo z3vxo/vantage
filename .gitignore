@@ -6,6 +6,7 @@
 /server2/static/images/screenshots
 /server2/static/dist/
 /server2/logs
+/server2/temp/
 # ── Databases ──
 /server2/databases/
 
