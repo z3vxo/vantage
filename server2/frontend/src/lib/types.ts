@@ -17,9 +17,9 @@ export interface Host {
 
 export interface Hit {
   url: string
-  status: number
+  status: string
   sc: string
-  size: number
+  size: string
   severity: 'high' | 'medium' | 'low'
 }
 

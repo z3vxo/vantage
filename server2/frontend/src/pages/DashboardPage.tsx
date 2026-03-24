@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import type { Host, Hit, HostStats } from '../lib/types'
 import HostsTab from './HostsTab'
+import HitsTab from './HitsTab'
 import OverviewTab from './OverviewTab'
 
 type Tab = 'hosts' | 'hits' | 'js' | 'overview'
@@ -104,7 +105,7 @@ export default function DashboardPage() {
         />
       )}
 
-      {tab === 'hits' && <StubTab label="Juicy Hits" color="var(--orange)" />}
+      {tab === 'hits' && <HitsTab hits={hits} />}
       {tab === 'js'   && <StubTab label="JS Analysis" color="var(--yellow)" />}
     </div>
   )

@@ -80,7 +80,7 @@ path_probe() {
 
     httpx -silent \
         -l "$httpx_dir/${DOMAIN}_path_targets.txt" \
-        -mc 200,201,301,302 \
+        -mc 200 \
         -status-code \
         -content-length \
         -json \
