@@ -225,11 +225,6 @@ export default function HostsTab({ domain, hosts, stats, onImport, onOpenInOverv
     ]
   }
 
-  const scColor: Record<string, string> = {
-    s200: 'var(--green)', s201: 'var(--green)',
-    s301: 'var(--orange)', s302: 'var(--orange)',
-    s403: 'var(--red)', s400: 'var(--red)',
-  }
 
   // ── Render ─────────────────────────────────────────────────────────────
 
@@ -310,7 +305,7 @@ export default function HostsTab({ domain, hosts, stats, onImport, onOpenInOverv
 
         {/* Sticky header */}
         <div className="hosts-header-row" style={{ gridTemplateColumns: template }}>
-          {COLS.filter((c, i) => {
+          {COLS.filter((_c, i) => {
             if (i < 6) return true
             if (i === 6) return colVis.ips
             if (i === 7) return colVis.cname

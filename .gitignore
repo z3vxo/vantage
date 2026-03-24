@@ -3,6 +3,8 @@
 /probe/
 /temp/
 /server2/frontend/node_modules
+/server2/static/images/screenshots
+/server2/static/dist/
 # ── Databases ──
 /server2/databases/
 
