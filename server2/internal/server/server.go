@@ -64,7 +64,7 @@ func Run() {
 		r.ServeHTTP(w, req)
 	})
 
-	fmt.Println("[+] Server running on http://127.0.0.1:8080")
+	fmt.Println("[+] Server running on http://0.0.0.0:8080")
 	http.ListenAndServe(":8080", handler)
 }
 

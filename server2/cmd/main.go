@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/execute-assembly/recon-dashboard/internal/server"
+	"github.com/z3vxo/recon-dashboard/internal/server"
 )
 
 func setupLogs() *os.File {

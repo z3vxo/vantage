@@ -1,4 +1,4 @@
-module github.com/execute-assembly/recon-dashboard
+module github.com/z3vxo/recon-dashboard
 
 go 1.24.4
 

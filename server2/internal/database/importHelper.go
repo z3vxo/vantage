@@ -3,6 +3,7 @@ package database
 import (
     "errors"
     "os"
+    "path/filepath"
     "strings"
     "strconv"
     "fmt"
@@ -63,7 +64,8 @@ func ImportPathHits(domain string) error {
 		return fmt.Errorf("failed to get db: %w", err)
 	}
 
-	fullPath := "../probe/httpx/" + domain + "_path_hits.txt"
+	home, _ := os.UserHomeDir()
+	fullPath := filepath.Join(home, ".recon", domain, "probe", "httpx", domain+"_path_hits.txt")
 	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
 		return nil // no hits file is fine
 	}
@@ -123,7 +125,8 @@ func ImportHttpx(domain string) error {
 	if err != nil {
         return fmt.Errorf("failed to get db: %w", err)
     }
-	fullPath := "../probe/httpx/" + domain + "_httpx_enriched.json"
+	home, _ := os.UserHomeDir()
+	fullPath := filepath.Join(home, ".recon", domain, "probe", "httpx", domain+"_httpx_enriched.json")
 
 	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
     	return errors.New("file does not exist")

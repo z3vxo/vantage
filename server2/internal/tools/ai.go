@@ -8,7 +8,7 @@ import (
 
 	"github.com/anthropics/anthropic-sdk-go"
 	"github.com/anthropics/anthropic-sdk-go/option"
-	"github.com/execute-assembly/recon-dashboard/internal/database"
+	"github.com/z3vxo/recon-dashboard/internal/database"
 )
 
 const systemPrompt = `You are a bug bounty reconnaissance triage assistant. Your job is to classify domains into priority tiers based on their URL, page title, and tech stack.
