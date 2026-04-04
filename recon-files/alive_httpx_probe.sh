@@ -46,6 +46,9 @@ httpx_enrich() {
     httpx -silent -follow-redirects \
         -l "$subs_file" \
         -p "$PORTS" \
+        -c 200 \
+        -timeout 3 \
+        -retries 0 \
         -status-code \
         -title \
         -tech-detect \
