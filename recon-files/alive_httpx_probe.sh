@@ -46,7 +46,8 @@ httpx_enrich() {
     httpx -silent -follow-redirects \
         -l "$subs_file" \
         -p "$PORTS" \
-        -c 200 \
+        -t 200 \
+        -rl 500 \
         -timeout 3 \
         -retries 0 \
         -status-code \
@@ -57,13 +58,16 @@ httpx_enrich() {
         -ip \
         -cname \
         -json \
-        -o "$httpx_dir/${DOMAIN}_httpx_enriched.json" > /dev/null 2>&1
+        -o "$httpx_dir/${DOMAIN}_httpx_enriched.json" 2>&1 || true
 
-    echo -e "${BOLD}${GREEN}[*]${ENDCOLOR} Enrichment complete: ${BOLD}$(wc -l < "$httpx_dir/${DOMAIN}_httpx_enriched.json") hosts${ENDCOLOR}\n"
+    local count=0
+    [[ -s "$httpx_dir/${DOMAIN}_httpx_enriched.json" ]] && count=$(wc -l < "$httpx_dir/${DOMAIN}_httpx_enriched.json")
+    echo -e "${BOLD}${GREEN}[*]${ENDCOLOR} Enrichment complete: ${BOLD}${count} hosts${ENDCOLOR}\n"
 }
 
 # ─────────────────────────────────────────────
 path_probe() {
+    [[ -s "$httpx_dir/${DOMAIN}_httpx_enriched.json" ]] || { echo -e "${BOLD}${YELLOW}[!]${ENDCOLOR} No live hosts found, skipping path probe"; return; }
     echo -e "${BOLD}${BLUE}[+]${ENDCOLOR} Probing juicy paths..."
 
     local paths=(
@@ -88,7 +92,7 @@ path_probe() {
         -status-code \
         -content-length \
         -json \
-        -o "$httpx_dir/${DOMAIN}_path_hits_raw.json" > /dev/null 2>&1
+        -o "$httpx_dir/${DOMAIN}_path_hits_raw.json" > /dev/null 2>&1 || true
 
     python3 - "$httpx_dir/${DOMAIN}_path_hits_raw.json" <<'EOF' > "$httpx_dir/${DOMAIN}_path_hits.txt"
 import sys, json
