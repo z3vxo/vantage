@@ -7,10 +7,10 @@ if [[ -z "${1:-}" ]]; then
 fi
 
 DOMAIN=$1
-subs_dir="subdomains"
-probe="probe"
-portscan_dir="probe/port-scan"
-temp="temp"
+subs_dir="$HOME/.recon/$DOMAIN/subdomains"
+probe="$HOME/.recon/$DOMAIN/probe"
+portscan_dir="$HOME/.recon/$DOMAIN/probe/port-scan"
+temp="$HOME/.recon/$DOMAIN/temp"
 cdn_ranges="$temp/cdn_ranges.txt"
 
 # ── Colours ───────────────────────────────────

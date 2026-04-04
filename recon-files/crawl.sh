@@ -5,7 +5,6 @@ log_info() { echo -e "${BOLD}${B}[+]${NC} $1"; }
 log_ok()   { echo -e "${BOLD}${G}[*]${NC} $1"; }
 log_err()  { echo -e "${BOLD}${R}[!]${NC} $1" >&2; }
 
-TEMP_DIR="temp"
 HEADLESS=false
 
 checktools() {
@@ -19,18 +18,20 @@ checktools() {
 
 runpassive() {
     local domain="$1"
+    local temp_dir="$HOME/.recon/$domain/temp"
 
     log_info "Running gau on $domain..."
-    gau "$domain" > "$TEMP_DIR/${domain}_gau.txt" 2>/dev/null
-    log_ok "gau done: $(wc -l < "$TEMP_DIR/${domain}_gau.txt") URLs"
+    gau "$domain" > "$temp_dir/${domain}_gau.txt" 2>/dev/null
+    log_ok "gau done: $(wc -l < "$temp_dir/${domain}_gau.txt") URLs"
 
     log_info "Running waybackurls on $domain..."
-    waybackurls "$domain" > "$TEMP_DIR/${domain}_wayback.txt" 2>/dev/null
-    log_ok "waybackurls done: $(wc -l < "$TEMP_DIR/${domain}_wayback.txt") URLs"
+    waybackurls "$domain" > "$temp_dir/${domain}_wayback.txt" 2>/dev/null
+    log_ok "waybackurls done: $(wc -l < "$temp_dir/${domain}_wayback.txt") URLs"
 }
 
 runactive() {
     local domain="$1"
+    local temp_dir="$HOME/.recon/$domain/temp"
     local katana_args=(-u "https://$domain" -d 3 -jc -kf all -c 20 -silent)
 
     if [ "$HEADLESS" = true ]; then
@@ -40,8 +41,8 @@ runactive() {
         log_info "Running katana on $domain..."
     fi
 
-    katana "${katana_args[@]}" -o "$TEMP_DIR/${domain}_katana.txt" > /dev/null 2>&1
-    log_ok "katana done: $(wc -l < "$TEMP_DIR/${domain}_katana.txt") URLs"
+    katana "${katana_args[@]}" -o "$temp_dir/${domain}_katana.txt" > /dev/null 2>&1
+    log_ok "katana done: $(wc -l < "$temp_dir/${domain}_katana.txt") URLs"
 }
 
 # ── Arg parsing ──
@@ -58,11 +59,11 @@ if [ "${2}" = "--headless" ]; then
 fi
 
 checktools
-mkdir -p "$TEMP_DIR"
 
 while IFS= read -r line; do
     [ -z "$line" ] && continue
     log_info "Processing $line..."
+    mkdir -p "$HOME/.recon/$line/temp"
     #runpassive "$line"
     runactive "$line"
     echo ""

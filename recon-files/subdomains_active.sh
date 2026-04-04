@@ -1,9 +1,6 @@
 #!/bin/bash
 set -euo pipefail
 
-subs_dir="subdomains"
-active_dir="subdomains/active"
-
 resolvers_name="resolvers.txt"
 trusted_resolvers_name="trusted_resolvers.txt"
 
@@ -39,21 +36,24 @@ if [ "$bruteforce" = true ] && [ -z "$1" ]; then
 fi
 
 [ -n "$1" ] && url=$1
+subs_dir="$HOME/.recon/$url/subdomains"
+active_dir="$HOME/.recon/$url/subdomains/active"
+temp_dir="$HOME/.recon/$url/temp"
 
 
 cleanup() {
 
-	rm "temp/$trusted_resolvers_name" && rm "temp/$resolvers_name"
+	rm "$temp_dir/$trusted_resolvers_name" && rm "$temp_dir/$resolvers_name"
 
 }
 
 
 get_new_resolvers() {
-	mkdir -p "temp"
-	printf "1.1.1.1\n1.0.0.1\n8.8.8.8\n8.8.4.4\n9.9.9.9\n149.112.112.112\n208.67.222.222\n208.67.220.220\n" > "temp/$trusted_resolvers_name"
+	mkdir -p "$temp_dir"
+	printf "1.1.1.1\n1.0.0.1\n8.8.8.8\n8.8.4.4\n9.9.9.9\n149.112.112.112\n208.67.222.222\n208.67.220.220\n" > "$temp_dir/$trusted_resolvers_name"
 
 	echo -e "${BOLD}${BLUE}[+]${ENDCOLOR} Retreving upto date resolvers.txt..."
-	if ! wget -q -O "temp/$resolvers_name" "$resolvers_url"; then
+	if ! wget -q -O "$temp_dir/$resolvers_name" "$resolvers_url"; then
 
 	    echo -e "${BOLD}${RED}[!]${ENDCOLOR} Failed to fetch resolvers, falling back to local copy..." >&2
 
@@ -98,7 +98,7 @@ mutate_words() {
 resolve_dns() {
   echo -e "\n${BOLD}${BLUE}[+]${ENDCOLOR} Resolving passive subdomains..."
 
-  puredns resolve "$subs_dir/all_subs.txt" --resolvers "temp/$resolvers_name" --resolvers-trusted "temp/$trusted_resolvers_name" --rate-limit 10000 --rate-limit-trusted 2000 -w "$active_dir/resolved.txt" \
+  puredns resolve "$subs_dir/all_subs.txt" --resolvers "$temp_dir/$resolvers_name" --resolvers-trusted "$temp_dir/$trusted_resolvers_name" --rate-limit 10000 --rate-limit-trusted 2000 -w "$active_dir/resolved.txt" \
     || { echo -e "${BOLD}${RED}[!]${ENDCOLOR} puredns failed" >&2; exit 1; }
 
   [[ -s "$active_dir/resolved.txt" ]] \
@@ -111,7 +111,7 @@ resolve_dns() {
 
 resolve__permuated_dns() {
 
-  puredns resolve "$active_dir/mutated.txt" --resolvers "temp/$resolvers_name" --resolvers-trusted "temp/$trusted_resolvers_name" --rate-limit 10000 --rate-limit-trusted 2000 -w "$active_dir/puredns.txt"
+  puredns resolve "$active_dir/mutated.txt" --resolvers "$temp_dir/$resolvers_name" --resolvers-trusted "$temp_dir/$trusted_resolvers_name" --rate-limit 10000 --rate-limit-trusted 2000 -w "$active_dir/puredns.txt"
 
   echo -e "${BOLD}${GREEN}[*]${ENDCOLOR} Resolved domains: ${BOLD}$(wc -l < "$active_dir/puredns.txt")${ENDCOLOR} results"
 
