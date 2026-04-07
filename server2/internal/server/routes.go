@@ -243,6 +243,10 @@ func authMiddleware(next http.Handler) http.Handler {
 		}
 		exp, ok := sessions[cookie.Value]
 		if !ok || time.Now().After(exp) {
+			if ok {
+				delete(sessions, cookie.Value)
+				saveSessions()
+			}
 			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
 			return
 		}
@@ -255,7 +259,31 @@ type LoginData struct {
 	Password string `json:"password"`
 }
 
+const sessionsFile = "./sessions.json"
+
 var sessions = map[string]time.Time{}
+
+func loadSessions() {
+	data, err := os.ReadFile(sessionsFile)
+	if err != nil {
+		return
+	}
+	json.Unmarshal(data, &sessions)
+	// prune expired
+	for token, exp := range sessions {
+		if time.Now().After(exp) {
+			delete(sessions, token)
+		}
+	}
+}
+
+func saveSessions() {
+	data, err := json.Marshal(sessions)
+	if err != nil {
+		return
+	}
+	os.WriteFile(sessionsFile, data, 0600)
+}
 
 func randString() (string, error) {
 	b := make([]byte, 32)
@@ -285,7 +313,8 @@ func Login_Handler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		sessions[token] = time.Now().Add(24 * time.Hour)
+		sessions[token] = time.Now().Add(30 * 24 * time.Hour)
+		saveSessions()
 
 		http.SetCookie(w, &http.Cookie{
 			Name:     "session",
@@ -293,11 +322,18 @@ func Login_Handler(w http.ResponseWriter, r *http.Request) {
 			Path:     "/",
 			HttpOnly: true,
 			SameSite: http.SameSiteStrictMode,
-			MaxAge:   86400,
+			MaxAge:   30 * 86400,
 		})
 
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 		return
 	}
 
+	http.Redirect(w, r, "/goaway", http.StatusSeeOther)
+}
+
+func GoAway_Handler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(`<html><body>Stop looking here</body></html>`))
 }

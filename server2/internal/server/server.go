@@ -13,11 +13,13 @@ import (
 //  {hostURL} -> host level, e.g https://domain.com:443 -> routes need url decoding!
 
 func Run() {
+	loadSessions()
 	r := chi.NewRouter()
 
 	r.Use(authMiddleware)
 
 	r.Post("/api/login", Login_Handler)
+	r.Get("/goaway", GoAway_Handler)
 
 	r.Get("/api/{domain}/hosts", Host_Handler)
 	r.Get("/api/{domain}/hits", Juicy_Handler)

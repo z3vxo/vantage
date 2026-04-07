@@ -78,7 +78,7 @@ const COLS = [
 
 function gridTemplate(vis: ColVis): string {
   return [
-    'minmax(180px, 380px)',
+    'minmax(220px, 1fr)',
     '70px',
     '150px',
     '120px',
