@@ -78,8 +78,21 @@ func AnlyiseBatch(batch []database.DomainForAI) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(message.Content[0].Text)
+
+	raw := message.Content[0].Text
+	raw = stripMarkdown(raw)
+	fmt.Println(raw)
 
 	return nil
+}
 
+func stripMarkdown(s string) string {
+	s = strings.TrimSpace(s)
+	if strings.HasPrefix(s, "```") {
+		s = s[strings.Index(s, "\n")+1:]
+	}
+	if strings.HasSuffix(s, "```") {
+		s = s[:strings.LastIndex(s, "```")]
+	}
+	return strings.TrimSpace(s)
 }
