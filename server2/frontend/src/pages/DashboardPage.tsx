@@ -89,8 +89,18 @@ export default function DashboardPage() {
         </div>
 
         <div className="header-divider" />
-        <a href="/" style={{ color: 'var(--text-muted)', textDecoration: 'none', fontSize: 12, fontFamily: "'Fira Code', monospace", flexShrink: 0 }}>
-          ← {domain}
+        <a href="/" style={{ textDecoration: 'none', flexShrink: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>←</span>
+          <span style={{
+            color: 'var(--accent)',
+            fontSize: 13,
+            fontWeight: 600,
+            fontFamily: "'Fira Code', monospace",
+            background: 'var(--accent-dim)',
+            border: '1px solid var(--accent)',
+            borderRadius: 4,
+            padding: '2px 8px',
+          }}>{domain}</span>
         </a>
       </header>
 
