@@ -76,6 +76,47 @@ func GetUpdateReq(offset int) (TelegramResponse, error) {
 
 }
 
+const (
+	CMD_UNKNOWN = 0
+	CMD_START   = 1
+	CMD_TARGETS = 2
+)
+
+func CheckCommandType(message string) int {
+	if strings.HasPrefix(message, "/start") {
+		return CMD_START
+	} else if strings.HasPrefix(message, "/targets") {
+		return CMD_TARGETS
+	}
+	return CMD_UNKNOWN
+}
+
+func ListTargets() {
+	entries, err := os.ReadDir(database.DbDir())
+	if err != nil {
+		SendTelegram("[!] Failed to read targets")
+		return
+	}
+
+	var targets []string
+	for _, entry := range entries {
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), "_db.sql") {
+			targets = append(targets, strings.TrimSuffix(entry.Name(), "_db.sql"))
+		}
+	}
+
+	if len(targets) == 0 {
+		SendTelegram("[*] No targets found")
+		return
+	}
+
+	msg := "[*] Targets:\n"
+	for _, t := range targets {
+		msg += "[+] " + t + "\n"
+	}
+	SendTelegram(msg)
+}
+
 func StartTeleGramBot() {
 	fmt.Println("[*] Telegram bot started, ensure api key and chat ID are in envs")
 	chatIDstr := os.Getenv("TELEGRAM_CHAT_ID")
@@ -91,13 +132,16 @@ func StartTeleGramBot() {
 			if r.Message.Chat.ID != chatID {
 				continue
 			}
-			if strings.HasPrefix(r.Message.Text, "/start") {
+			switch CheckCommandType(r.Message.Text) {
+			case CMD_START:
 				domain := strings.TrimSpace(strings.TrimPrefix(r.Message.Text, "/start"))
 				if domain == "" {
 					SendTelegram("[!] Error: domain must be present\n/start <domain>")
 					continue
 				}
 				go RunWorkFlow(domain)
+			case CMD_TARGETS:
+				go ListTargets()
 			}
 		}
 		if len(Response.Result) > 0 {
