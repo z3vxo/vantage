@@ -47,7 +47,7 @@ func RunWorkFlow(baseDomain string) {
 		return
 	}
 	msg := fmt.Sprintf("[*] Recon Done for %s\n---STATS---\n[+] Total Hosts %d\n[+] 2xx: %d\n[+] 4xx: %d\n[+] 5xx: %d\n[+] Endpoint hits: %d\n",
-		stats.Total, stats.S2xx, stats.S4xx, stats.S5xx, stats.Hits)
+		baseDomain, stats.Total, stats.S2xx, stats.S4xx, stats.S5xx, stats.Hits)
 	SendTelegram(msg)
 
 }
