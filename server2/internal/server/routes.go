@@ -306,6 +306,8 @@ func Login_Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ip := r.RemoteAddr
+
 	if data.Username == user && data.Password == pass {
 		token, err := randString()
 		if err != nil {
@@ -325,10 +327,12 @@ func Login_Handler(w http.ResponseWriter, r *http.Request) {
 			MaxAge:   30 * 86400,
 		})
 
+		slog.Info("login success", "user", data.Username, "ip", ip)
 		writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 		return
 	}
 
+	slog.Warn("login failed", "user", data.Username, "ip", ip)
 	http.Redirect(w, r, "/goaway", http.StatusSeeOther)
 }
 
