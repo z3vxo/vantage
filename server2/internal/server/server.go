@@ -32,7 +32,7 @@ func Run() {
 	r.Get("/api/{domain}/host/{hostURL}/screenshot", ScreenShotServe_Handler)
 	// r.Post("/api/{domain}/host/{hostURL}/portscan", PortScan_Handler)
 
-	r.Post("/api/{domain}/ai/domains", AiDomain_Handler)
+	//r.Post("/api/workflow", Worflow_Handler)
 
 	r.Post("/api/import/{domain}", ImportHandler)
 	r.Delete("/api/delete/{domain}", deleteTargetHandler)

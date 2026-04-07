@@ -29,7 +29,7 @@ func setupLogs() *os.File {
 }
 
 func main() {
-	tools.AnalyiseDomains("transport.wa.gov.au")
+	tools.RunWorkFlow("clovr.dev")
 	return
 	f := setupLogs()
 	defer f.Close()
