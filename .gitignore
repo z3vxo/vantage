@@ -12,7 +12,7 @@
 
 # ── Old server ──
 /server/
-
+/server2/recon-server
 # ── Claude ──
 .claude/
 .env
