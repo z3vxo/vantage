@@ -32,6 +32,16 @@ type NoteStruct struct {
 	Note   string `json:"notes"`
 }
 
+func realIP(r *http.Request) string {
+	if ip := r.Header.Get("X-Real-IP"); ip != "" {
+		return ip
+	}
+	if ip := r.Header.Get("X-Forwarded-For"); ip != "" {
+		return strings.Split(ip, ",")[0]
+	}
+	return r.RemoteAddr
+}
+
 func writeJSON(w http.ResponseWriter, status int, msg any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
@@ -239,7 +249,7 @@ func authMiddleware(next http.Handler) http.Handler {
 		}
 		cookie, err := r.Cookie("session")
 		if err != nil {
-			slog.Warn("unauthorized request - no session cookie", "path", r.URL.Path, "ip", r.RemoteAddr)
+			slog.Warn("unauthorized request - no session cookie", "path", r.URL.Path, "ip", realIP(r))
 			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
 			return
 		}
@@ -249,7 +259,7 @@ func authMiddleware(next http.Handler) http.Handler {
 				delete(sessions, cookie.Value)
 				saveSessions()
 			}
-			slog.Warn("unauthorized request - invalid or expired session", "path", r.URL.Path, "ip", r.RemoteAddr)
+			slog.Warn("unauthorized request - invalid or expired session", "path", r.URL.Path, "ip", realIP(r))
 			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
 			return
 		}
@@ -315,7 +325,7 @@ func Login_Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ip := r.RemoteAddr
+	ip := realIP(r)
 
 	if data.Username == user && data.Password == pass {
 		token, err := randString()
@@ -348,14 +358,14 @@ func Login_Handler(w http.ResponseWriter, r *http.Request) {
 func Logs_Handler(w http.ResponseWriter, r *http.Request) {
 	home, _ := os.UserHomeDir()
 	logPath := home + "/.recon/logs/recon.log"
-	slog.Info("log file downloaded", "ip", r.RemoteAddr)
+	slog.Info("log file downloaded", "ip", realIP(r))
 	w.Header().Set("Content-Disposition", "attachment; filename=recon.log")
 	w.Header().Set("Content-Type", "text/plain")
 	http.ServeFile(w, r, logPath)
 }
 
 func GoAway_Handler(w http.ResponseWriter, r *http.Request) {
-	slog.Warn("goaway hit", "ip", r.RemoteAddr)
+	slog.Warn("goaway hit", "ip", realIP(r))
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`<html><body>Stop looking here</body></html>`))
@@ -378,7 +388,7 @@ func Worflow_Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	slog.Info("recon workflow triggered", "target", TargetVal.Target, "ip", r.RemoteAddr)
+	slog.Info("recon workflow triggered", "target", TargetVal.Target, "ip", realIP(r))
 	go tools.RunWorkFlow(TargetVal.Target)
 	writeJSON(w, http.StatusOK, map[string]string{"status": "started"})
 }
