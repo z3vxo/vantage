@@ -38,14 +38,6 @@ func writeJSON(w http.ResponseWriter, status int, msg any) {
 	json.NewEncoder(w).Encode(msg)
 }
 
-func AiDomain_Handler(w http.ResponseWriter, r *http.Request) {
-	domain := chi.URLParam(r, "domain")
-	fmt.Println(domain)
-
-	tools.AnalyiseDomains(domain)
-	writeJSON(w, http.StatusOK, "YEP")
-}
-
 func Triage_Handler(w http.ResponseWriter, r *http.Request) {
 	domain := chi.URLParam(r, "domain")
 	hostURL, _ := url.QueryUnescape(chi.URLParam(r, "hostURL"))
