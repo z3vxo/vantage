@@ -395,6 +395,7 @@ body {
   background: transparent; border: 1px solid var(--border2); color: var(--text-muted);
   width: 26px; height: 26px; flex-shrink: 0; cursor: pointer; font-size: 12px;
   display: flex; align-items: center; justify-content: center; transition: all 0.1s;
+  border-radius: 4px;
 }
 .sidebar-collapse-btn:hover { color: var(--text); border-color: var(--text-dim); }
 .sidebar-list { overflow-y: auto; flex: 1; scrollbar-width: thin; scrollbar-color: var(--border2) transparent; }
@@ -647,7 +648,7 @@ body {
   cursor: pointer; transition: background 0.1s; box-sizing: border-box;
 }
 .hosts-row:hover .hosts-td { background: var(--surface2); color: var(--text); }
-.hosts-row.hosts-row-child .hosts-td { background: #000; color: var(--text-muted); font-size: 12px; border-left: 2px solid var(--border2); }
+.hosts-row.hosts-row-child .hosts-td { background: var(--bg); color: var(--text-muted); font-size: 12px; border-left: 2px solid var(--border2); }
 .hosts-row.hosts-row-child:hover .hosts-td { background: var(--surface) !important; color: var(--text) !important; }
 .hosts-row.hosts-row-hidden { opacity: 0.35; }
 .hosts-row.hosts-row-hidden:hover { opacity: 0.7; }
@@ -655,9 +656,9 @@ body {
 .hide-host-btn {
   opacity: 0; background: none; border: 1px solid var(--border2);
   color: var(--text-muted); cursor: pointer; font-size: 10px;
-  padding: 1px 6px; font-family: 'Fira Code', monospace;
+  padding: 1px 6px; font-family: inherit;
   transition: opacity 0.1s, color 0.1s, border-color 0.1s;
-  flex-shrink: 0; margin-left: auto;
+  flex-shrink: 0; margin-left: auto; border-radius: 4px;
 }
 .hosts-row:hover .hide-host-btn { opacity: 1; }
 .hide-host-btn:hover { color: var(--text); border-color: var(--text-muted); }
@@ -677,7 +678,7 @@ body {
 
 .triage-tag {
   display: inline-block; font-size: 10px; padding: 1px 5px;
-  border: 1px solid; font-family: 'Fira Code', monospace;
+  border: 1px solid; font-family: inherit; border-radius: 4px;
 }
 .triage-tag[data-status="to-test"]  { color: var(--orange); border-color: var(--orange); background: var(--orange-dim); }
 .triage-tag[data-status="dead-end"] { color: var(--red);    border-color: var(--red);    background: var(--red-dim); }
@@ -701,13 +702,13 @@ body {
 .panel-close {
   background: none; border: 1px solid var(--border2); cursor: pointer;
   color: var(--text-muted); padding: 3px 6px; display: flex; align-items: center;
-  transition: all 0.1s;
+  transition: all 0.1s; border-radius: 4px;
 }
-.panel-close:hover { color: var(--text); border-color: var(--text-dim); }
+.panel-close:hover { color: var(--text); border-color: var(--text-dim); background: var(--surface2); }
 .panel-ov-btn {
   background: transparent; border: 1px solid var(--border2);
   color: var(--text-muted); padding: 3px 8px; cursor: pointer;
-  font-size: 11px; font-family: 'IBM Plex Sans', sans-serif; transition: all 0.1s;
+  font-size: 11px; font-family: inherit; transition: all 0.1s; border-radius: 4px;
 }
 .panel-ov-btn:hover { color: var(--text); border-color: var(--text-dim); }
 .panel-url {
