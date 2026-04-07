@@ -40,7 +40,7 @@ body {
 /* ── Header ── */
 .header {
   background: var(--surface);
-  border-bottom: 1px solid var(--border2);
+  border-bottom: 2px solid var(--accent);
   padding: 0 28px;
   display: flex;
   align-items: center;
