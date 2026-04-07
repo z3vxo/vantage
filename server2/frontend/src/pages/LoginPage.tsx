@@ -45,7 +45,7 @@ export default function LoginPage() {
       {/* brand */}
       <div style={{ marginBottom: 32, textAlign: 'center' }}>
         <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)', letterSpacing: '0.05em' }}>
-          RECON DASHBOARD
+          VANTAGE
         </div>
         <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: "'Fira Code', monospace", marginTop: 4 }}>
           operator access only
