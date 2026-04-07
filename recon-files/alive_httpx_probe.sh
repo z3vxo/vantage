@@ -43,7 +43,7 @@ httpx_enrich() {
 
     echo -e "${BOLD}${BLUE}[+]${ENDCOLOR} Probing $(wc -l < "$subs_file") domains across common ports..."
 
-    httpx -silent \
+    httpx -silent -follow-redirects\
         -l "$subs_file" \
         -p "$PORTS" \
         -t 200 \
@@ -58,7 +58,7 @@ httpx_enrich() {
         -ip \
         -cname \
         -json \
-        -o "$httpx_dir/${DOMAIN}_httpx_enriched.json" 2>&1 || true
+        -o "$httpx_dir/${DOMAIN}_httpx_enriched.json" > /dev/null 2>&1 || true
 
     local count=0
     [[ -s "$httpx_dir/${DOMAIN}_httpx_enriched.json" ]] && count=$(wc -l < "$httpx_dir/${DOMAIN}_httpx_enriched.json")

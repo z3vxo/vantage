@@ -19,7 +19,7 @@ func SendTelegram(msg string) {
 }
 
 func RunWorkFlow(baseDomain string) {
-	out, err := exec.Command("recon.sh", baseDomain).CombinedOutput()
+	out, err := exec.Command("../recon.sh", baseDomain).CombinedOutput()
 	if err != nil {
 		str := fmt.Sprintf("Failed Running recon pipeline: %s", err)
 		SendTelegram(str)
