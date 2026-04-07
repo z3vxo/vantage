@@ -18,7 +18,13 @@ export default function LoginPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),
+        redirect: 'manual',
       })
+
+      if (res.type === 'opaqueredirect' || res.status === 303) {
+        window.location.href = '/goaway'
+        return
+      }
 
       if (res.ok) {
         navigate('/')
