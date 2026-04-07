@@ -91,8 +91,12 @@ func StartTeleGramBot() {
 			if r.Message.Chat.ID != chatID {
 				continue
 			}
-			if strings.HasPrefix(r.Message.Text, "/start ") {
-				domain := strings.TrimSpace(strings.TrimPrefix(r.Message.Text, "/start "))
+			if strings.HasPrefix(r.Message.Text, "/start") {
+				domain := strings.TrimSpace(strings.TrimPrefix(r.Message.Text, "/start"))
+				if domain == "" {
+					SendTelegram("[!] Error: domain must be present\n/start <domain>")
+					continue
+				}
 				go RunWorkFlow(domain)
 			}
 		}

@@ -50,10 +50,12 @@ func Triage_Handler(w http.ResponseWriter, r *http.Request) {
 
 	err := database.UpdateTriage(domain, hostURL, data.Status)
 	if err != nil {
+		slog.Error("failed to update triage", "domain", domain, "host", hostURL, "err", err)
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"status": "failed to insert"})
 		return
 	}
 
+	slog.Debug("triage updated", "domain", domain, "host", hostURL, "status", data.Status)
 	writeJSON(w, http.StatusOK, map[string]string{"status": "Status updated!"})
 	return
 
@@ -84,6 +86,7 @@ func Host_Handler(w http.ResponseWriter, r *http.Request) {
 	domain := chi.URLParam(r, "domain")
 	data, err := database.ReadHosts(domain)
 	if err != nil {
+		slog.Error("failed to read hosts", "domain", domain, "err", err)
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"status": error.Error(err)})
 		return
 	}
@@ -96,6 +99,7 @@ func Juicy_Handler(w http.ResponseWriter, r *http.Request) {
 	domain := chi.URLParam(r, "domain")
 	data, err := database.ReadHits(domain)
 	if err != nil {
+		slog.Error("failed to read hits", "domain", domain, "err", err)
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"status": error.Error(err)})
 		return
 	}
@@ -141,12 +145,13 @@ func NewTargetHandler(w http.ResponseWriter, r *http.Request) {
 	defer r.Body.Close()
 
 	err = database.CreateNewTarget(domain.Domain)
-
 	if err != nil {
+		slog.Error("failed to create target", "domain", domain.Domain, "err", err)
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"status": error.Error(err)})
 		return
 	}
 
+	slog.Info("new target created", "domain", domain.Domain)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"domain": domain.Domain})
 	return
@@ -156,33 +161,37 @@ func NewTargetHandler(w http.ResponseWriter, r *http.Request) {
 // Handles importing data for a target, reads json from disk and stores in DB
 func ImportHandler(w http.ResponseWriter, r *http.Request) {
 	domain := chi.URLParam(r, "domain")
+	slog.Info("import started", "domain", domain)
 
 	err := database.ImportData(domain)
-
 	if err != nil {
+		slog.Error("import failed", "domain", domain, "err", err)
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"status": error.Error(err)})
 		return
 	}
+
+	slog.Info("import complete", "domain", domain)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"domain": "good"})
-	return
 }
 
 func deleteTargetHandler(w http.ResponseWriter, r *http.Request) {
 	domain := chi.URLParam(r, "domain")
 
 	if err := database.DeleteData(domain); err != nil {
+		slog.Error("failed to delete target", "domain", domain, "err", err)
 		writeJSON(w, http.StatusInternalServerError, map[string]string{"status": "Failed Deleting Data."})
 		return
 	}
 
+	slog.Info("target deleted", "domain", domain)
 	writeJSON(w, http.StatusOK, map[string]string{"status": "Data Deleted Succesfully!"})
-	return
 }
 
 func ScreenShot_Handler(w http.ResponseWriter, r *http.Request) {
 	hostURL, _ := url.QueryUnescape(chi.URLParam(r, "hostURL"))
 	id := uuid.NewString()
+	slog.Info("screenshot started", "host", hostURL, "token", id)
 	go tools.Screenshot(hostURL, id)
 	writeJSON(w, http.StatusOK, map[string]string{"token": id})
 }
@@ -230,6 +239,7 @@ func authMiddleware(next http.Handler) http.Handler {
 		}
 		cookie, err := r.Cookie("session")
 		if err != nil {
+			slog.Warn("unauthorized request - no session cookie", "path", r.URL.Path, "ip", r.RemoteAddr)
 			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
 			return
 		}
@@ -239,6 +249,7 @@ func authMiddleware(next http.Handler) http.Handler {
 				delete(sessions, cookie.Value)
 				saveSessions()
 			}
+			slog.Warn("unauthorized request - invalid or expired session", "path", r.URL.Path, "ip", r.RemoteAddr)
 			writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
 			return
 		}
@@ -335,6 +346,7 @@ func Login_Handler(w http.ResponseWriter, r *http.Request) {
 }
 
 func GoAway_Handler(w http.ResponseWriter, r *http.Request) {
+	slog.Warn("goaway hit", "ip", r.RemoteAddr)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`<html><body>Stop looking here</body></html>`))
@@ -357,8 +369,7 @@ func Worflow_Handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	slog.Info("recon workflow triggered", "target", TargetVal.Target, "ip", r.RemoteAddr)
 	go tools.RunWorkFlow(TargetVal.Target)
 	writeJSON(w, http.StatusOK, map[string]string{"status": "started"})
-	return
-
 }
