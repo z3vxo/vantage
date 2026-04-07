@@ -345,6 +345,15 @@ func Login_Handler(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/goaway", http.StatusSeeOther)
 }
 
+func Logs_Handler(w http.ResponseWriter, r *http.Request) {
+	home, _ := os.UserHomeDir()
+	logPath := home + "/.recon/logs/recon.log"
+	slog.Info("log file downloaded", "ip", r.RemoteAddr)
+	w.Header().Set("Content-Disposition", "attachment; filename=recon.log")
+	w.Header().Set("Content-Type", "text/plain")
+	http.ServeFile(w, r, logPath)
+}
+
 func GoAway_Handler(w http.ResponseWriter, r *http.Request) {
 	slog.Warn("goaway hit", "ip", r.RemoteAddr)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
