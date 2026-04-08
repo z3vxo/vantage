@@ -191,7 +191,7 @@ func runTruffleHog(jsDir string) []database.JsSecret {
 }
 
 func analyzeJsFiles(jsDir, domain, hostURL string) error {
-	files, err := filepath.Glob(jsDir + "/*")
+	files, err := filepath.Glob(jsDir + "/response/*")
 	if err != nil || len(files) == 0 {
 		return nil
 	}
@@ -223,7 +223,7 @@ func analyzeJsFiles(jsDir, domain, hostURL string) error {
 	wg.Wait()
 
 	// TruffleHog on the whole dir as a second pass
-	thSecrets := runTruffleHog(jsDir)
+	thSecrets := runTruffleHog(jsDir + "/response")
 	allSecrets = append(allSecrets, thSecrets...)
 
 	return database.SaveJsResults(domain, hostURL, allSecrets, allLinks)
