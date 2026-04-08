@@ -83,6 +83,7 @@ const (
 	CMD_TARGETS = 2
 	CMD_INFO    = 3
 	CMD_DOMAINS = 4
+	CMD_JS      = 5
 )
 
 func CheckCommandType(message string) int {
@@ -94,6 +95,8 @@ func CheckCommandType(message string) int {
 		return CMD_INFO
 	} else if strings.HasPrefix(message, "/domains") {
 		return CMD_DOMAINS
+	} else if strings.HasPrefix(message, "/js") {
+		return CMD_JS
 	}
 	return CMD_UNKNOWN
 }
@@ -203,6 +206,13 @@ func StartTeleGramBot() {
 					continue
 				}
 				go ListDomains(target)
+				// case CMD_JS:
+				// 	target := strings.TrimSpace(strings.TrimPrefix(r.Message.Text, "/js"))
+				// 	if target == "" {
+				// 		SendTelegram("[!] Error: target must be present\n/js <target>")
+				// 		continue
+				// 	}
+				// 	go RunJs(target)
 			}
 		}
 		if len(Response.Result) > 0 {
@@ -211,6 +221,18 @@ func StartTeleGramBot() {
 		time.Sleep(2 * time.Second)
 	}
 }
+
+// func RunJs(target string) {
+// 	if isRunning(target) {
+// 		SendTelegram("[!] Recon Already Running for " + target)
+// 		return
+// 	}
+// 	setRunning(target, true)
+// 	defer setRunning(target, false)
+// 	SendTelegram(fmt.Sprintf("[*] Starting JS — %s", target))
+
+// 	ScrapeAndScan(target)
+// }
 
 func RunWorkFlow(baseDomain string) {
 
