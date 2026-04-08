@@ -473,6 +473,15 @@ body {
 .ov-hits-table tr:hover td { background: var(--surface); }
 .ov-hits-table a { color: var(--accent); text-decoration: none; }
 
+/* ── JS tab results ── */
+.js-results-list { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+.js-result-item { display: flex; align-items: flex-start; gap: 6px; padding: 6px 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; }
+.js-result-value { font-size: 12px; color: var(--text-dim); word-break: break-all; }
+.js-result-value.mono { font-family: 'Fira Code', monospace; }
+.js-result-item a.js-result-value { color: var(--accent); text-decoration: none; }
+.js-result-item a.js-result-value:hover { text-decoration: underline; }
+.js-secret .js-result-value { color: var(--red); }
+
 /* ── Shared: tech pills, badges, triage, notes, status colours ── */
 .tech-pill {
   display: inline-block; background: var(--surface2); border: 1px solid var(--border2);
