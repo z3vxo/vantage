@@ -1,4 +1,4 @@
-module github.com/z3vxo/recon-dashboard
+module github.com/z3vxo/vantage
 
 go 1.24.4
 
