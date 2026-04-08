@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/url"
 	"os"
 	"os/exec"
@@ -27,12 +28,15 @@ func runGau(tmpDir, id, hostURL string) {
 	fileName := fmt.Sprintf("%s/%s_gau.txt", tmpDir, id)
 	domain, err := extractHostname(hostURL)
 	if err != nil {
+		slog.Error("js: gau failed to extract hostname", "host", hostURL, "err", err)
 		return
 	}
 	res, err := exec.Command("gau", domain).CombinedOutput()
 	if err != nil {
+		slog.Error("js: gau failed", "host", domain, "err", err, "out", string(res))
 		return
 	}
+	slog.Debug("js: gau done", "host", domain, "lines", bytes.Count(res, []byte("\n")))
 	os.WriteFile(fileName, res, 0644)
 }
 
@@ -40,12 +44,15 @@ func runWayback(tmpDir, id, hostURL string) {
 	fileName := fmt.Sprintf("%s/%s_wayback.txt", tmpDir, id)
 	domain, err := extractHostname(hostURL)
 	if err != nil {
+		slog.Error("js: waybackurls failed to extract hostname", "host", hostURL, "err", err)
 		return
 	}
 	res, err := exec.Command("waybackurls", domain).CombinedOutput()
 	if err != nil {
+		slog.Error("js: waybackurls failed", "host", domain, "err", err, "out", string(res))
 		return
 	}
+	slog.Debug("js: waybackurls done", "host", domain, "lines", bytes.Count(res, []byte("\n")))
 	os.WriteFile(fileName, res, 0644)
 }
 
@@ -55,11 +62,14 @@ func runKatana(tmpDir, id, hostURL string) {
 		"-u", hostURL,
 		"-d", "2",
 		"-jc",
-		"-hl")
+		"-hl",
+		"-nos")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
+		slog.Error("js: katana failed", "host", hostURL, "err", err, "out", string(out))
 		return
 	}
+	slog.Debug("js: katana done", "host", hostURL, "lines", bytes.Count(out, []byte("\n")))
 	os.WriteFile(fileName, out, 0644)
 }
 
@@ -250,6 +260,13 @@ func ScrapeAndScan(host, id, domain string) {
 		return
 	}
 
+	jsList := fmt.Sprintf("%s/%s_js.txt", tmpDir, id)
+	if info, err := os.Stat(jsList); err == nil {
+		slog.Info("js: dedup complete", "host", host, "js_list_bytes", info.Size())
+	} else {
+		slog.Warn("js: no JS URLs found after dedup", "host", host)
+	}
+
 	if err := ScrapeJsFiles(host, domain, tmpDir, id); err != nil {
 		SetJob(id, JobResult{Status: JobFailed, Error: err.Error()})
 		return
@@ -257,6 +274,12 @@ func ScrapeAndScan(host, id, domain string) {
 
 	home, _ := os.UserHomeDir()
 	jsDir := fmt.Sprintf("%s/.recon/%s/%s/js", home, domain, SanitizeForFilename(host))
+	if entries, err := os.ReadDir(jsDir + "/response"); err == nil {
+		slog.Info("js: files downloaded", "host", host, "count", len(entries))
+	} else {
+		slog.Warn("js: no files downloaded", "host", host, "err", err)
+	}
+
 	if err := analyzeJsFiles(jsDir, domain, host); err != nil {
 		SetJob(id, JobResult{Status: JobFailed, Error: err.Error()})
 		return
