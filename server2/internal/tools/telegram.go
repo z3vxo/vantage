@@ -144,7 +144,7 @@ func ListDomains(target string) {
 		chunk := names[i:end]
 		msg := fmt.Sprintf("[*] Domains (%d-%d / %d):\n", i+1, end, len(names))
 		for _, e := range chunk {
-			msg += fmt.Sprintf("[+] <u>%s</u> %s\n", e.Name, e.StatusCode)
+			msg += fmt.Sprintf("<u>%s</u> %s\n", e.Name, e.StatusCode)
 		}
 		SendTelegram(msg)
 	}
