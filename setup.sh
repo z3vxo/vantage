@@ -18,16 +18,17 @@ apt update && apt upgrade -y
 
 # — Base Dependencies —
 
-apt install -y   
-git   
-python3-pip   
-build-essential   
-tmux   
-wget   
-curl   
-unzip   
-libpcap-dev   
+apt install -y
+git
+python3-pip
+build-essential
+tmux
+wget
+curl
+unzip
+libpcap-dev
 nmap
+nginx
 
 # — Fix TERM for tmux over SSH —
 
@@ -53,6 +54,8 @@ go install -v github.com/projectdiscovery/asnmap/cmd/asnmap@latest
 go install -v github.com/d3mondev/puredns/v2/cmd/puredns@latest
 go install -v github.com/projectdiscovery/alterx/cmd/alterx@latest
 go install -v github.com/owasp-amass/amass/v4/…@master
+go install -v github.com/tomnomnom/waybackurls@latest
+go install -v github.com/lc/gau/v2/cmd/gau@latest
 
 # — Massdns (required for puredns) —
 
@@ -71,15 +74,15 @@ mkdir -p /root/wordlists
 
 # Resolvers
 
-wget -q https://raw.githubusercontent.com/trickest/resolvers/main/resolvers.txt   
+wget -q https://raw.githubusercontent.com/trickest/resolvers/main/resolvers.txt
 -O /root/wordlists/resolvers.txt
 
 # DNS wordlists
 
-wget -q https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/DNS/subdomains-top1million-5000.txt   
+wget -q https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/DNS/subdomains-top1million-5000.txt
 -O /root/wordlists/subdomains-5k.txt
 
-wget -q https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/DNS/subdomains-top1million-110000.txt   
+wget -q https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discovery/DNS/subdomains-top1million-110000.txt
 -O /root/wordlists/subdomains-110k.txt
 
 # — Done —
@@ -89,7 +92,7 @@ echo “=========================================”
 echo “ VPS Setup Complete!”
 echo “ Tools: nmap, masscan, subfinder, httpx,”
 echo “        nuclei, puredns, massdns, amass,”
-echo “        alterx, asnmap”
+echo “        alterx, asnmap, gau, waybackurls”
 echo “ Wordlists: /root/wordlists/”
 echo “ Remember: source ~/.bashrc or re-login”
 echo “=========================================”

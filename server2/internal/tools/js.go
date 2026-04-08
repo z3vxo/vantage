@@ -134,6 +134,28 @@ func runLinkFinder(filePath string) []string {
 	return links
 }
 
+// isNoise returns true for SecretsFinder hits that are clearly false positives:
+// minified JS code, placeholder strings, or values that are too long/complex to be real credentials
+func isNoise(value string) bool {
+	// Too long to be a real secret (minified code)
+	if len(value) > 200 {
+		return true
+	}
+	// Contains JS syntax — it's code, not a credential
+	noisePatterns := []string{
+		"this.", "function", "return ", ".get", ".set",
+		"null,", "null}", "undefined", "=>", "(){", "()",
+		"wrapMethods", "wrapStruct", "gateMethod",
+	}
+	lower := strings.ToLower(value)
+	for _, p := range noisePatterns {
+		if strings.Contains(lower, p) {
+			return true
+		}
+	}
+	return false
+}
+
 // runSecretsFinder runs SecretFinder on a single file and returns secrets
 // Output format: "Type    ->    value"
 func runSecretsFinder(filePath string) []database.JsSecret {
@@ -151,13 +173,17 @@ func runSecretsFinder(filePath string) []database.JsSecret {
 		}
 		secretType := strings.TrimSpace(parts[0])
 		value := strings.TrimSpace(parts[1])
-		if secretType != "" && value != "" {
-			secrets = append(secrets, database.JsSecret{
-				File:  filePath,
-				Type:  secretType,
-				Value: value,
-			})
+		if secretType == "" || value == "" {
+			continue
 		}
+		if isNoise(value) {
+			continue
+		}
+		secrets = append(secrets, database.JsSecret{
+			File:  filePath,
+			Type:  secretType,
+			Value: value,
+		})
 	}
 	return secrets
 }
