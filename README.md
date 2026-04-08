@@ -1,6 +1,6 @@
 # recon
 
-A bug bounty / penetration testing reconnaissance automation toolkit with a Go-powered web dashboard.
+Vantage is a bug bounty / penetration testing reconnaissance automation toolkit with a Go-powered web dashboard.
 
 > **All reconnaissance must only be run against domains with explicit written authorisation.**
 
@@ -95,6 +95,11 @@ cd /path/to/recon && go run ./server2/cmd/main.go
 **Js Analysis** 
 ![js 1](images/secrets.jpg)
 ![js 1](images/secrets2.jpg)
+
+---
+
+# Install
+
 
 ---
 
