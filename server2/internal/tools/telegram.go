@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/z3vxo/recon-dashboard/internal/database"
+	"github.com/z3vxo/vantage/internal/database"
 )
 
 var (
