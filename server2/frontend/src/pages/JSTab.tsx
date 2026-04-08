@@ -38,7 +38,19 @@ function useJsScan(domain: string, hostURL: string) {
   useEffect(() => {
     stopPolling()
     setScan({ phase: 'idle' })
+
+    // Load existing results if a previous scan was run
+    fetchApi(`/api/${enc(domain)}/host/${enc(hostURL)}/js`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.secrets || d.links) {
+          setScan({ phase: 'done', result: { secrets: d.secrets ?? [], links: d.links ?? [] } })
+        }
+      })
+      .catch(() => {})
+
     return stopPolling
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [domain, hostURL])
 
   async function startScan() {
@@ -53,11 +65,17 @@ function useJsScan(domain: string, hostURL: string) {
 
       pollRef.current = setInterval(async () => {
         try {
-          const r2 = await fetchApi(`/api/${enc(domain)}/host/${enc(hostURL)}/js/status?id=${jobId}`)
+          const r2 = await fetchApi(`/api/tools/status?id=${jobId}`)
           const d = await r2.json()
           if (d.status === 'done') {
             stopPolling()
-            setScan({ phase: 'done', jobId, result: { secrets: d.secrets ?? [], links: d.links ?? [] } })
+            try {
+              const r3 = await fetchApi(`/api/${enc(domain)}/host/${enc(hostURL)}/js`)
+              const result = await r3.json()
+              setScan({ phase: 'done', jobId, result: { secrets: result.secrets ?? [], links: result.links ?? [] } })
+            } catch {
+              setScan({ phase: 'failed', jobId, error: 'Failed to fetch results' })
+            }
           } else if (d.status === 'failed') {
             stopPolling()
             setScan({ phase: 'failed', jobId, error: d.error || 'Scan failed' })

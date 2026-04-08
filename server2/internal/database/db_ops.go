@@ -22,6 +22,24 @@ func migrateDB(db *sql.DB) {
 	// SQLite ignores "duplicate column" errors — safe to run on every open
 	db.Exec(`ALTER TABLE domains ADD COLUMN triage_status TEXT NOT NULL DEFAULT ''`)
 	db.Exec(`ALTER TABLE domains ADD COLUMN notes TEXT NOT NULL DEFAULT ''`)
+	db.Exec(`CREATE TABLE IF NOT EXISTS js_files (
+		id        INTEGER PRIMARY KEY AUTOINCREMENT,
+		host_url  TEXT,
+		file_path TEXT
+	)`)
+	db.Exec(`CREATE TABLE IF NOT EXISTS js_secrets (
+		id          INTEGER PRIMARY KEY AUTOINCREMENT,
+		js_file_id  INTEGER,
+		secret_type TEXT,
+		value       TEXT,
+		FOREIGN KEY(js_file_id) REFERENCES js_files(id)
+	)`)
+	db.Exec(`CREATE TABLE IF NOT EXISTS js_links (
+		id         INTEGER PRIMARY KEY AUTOINCREMENT,
+		js_file_id INTEGER,
+		url        TEXT,
+		FOREIGN KEY(js_file_id) REFERENCES js_files(id)
+	)`)
 }
 
 func reconHome() string {

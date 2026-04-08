@@ -30,8 +30,11 @@ func Run() {
 	r.Post("/api/{domain}/host/{hostURL}/screenshot", ScreenShot_Handler)
 	r.Get("/api/{domain}/host/{hostURL}/screenshot/status", ScreenShotStatus_Handler)
 	r.Get("/api/{domain}/host/{hostURL}/screenshot", ScreenShotServe_Handler)
-	// r.Post("/api/{domain}/host/{hostURL}/portscan", PortScan_Handler)
 
+	r.Post("/api/{domain}/host/{hostURL}/js", JsTool_Handler)
+	r.Get("/api/{domain}/host/{hostURL}/js", JsTool_Handler)
+
+	r.Get("/api/tools/status", ToolStatus_Handler)
 	r.Post("/api/workflow", Worflow_Handler)
 
 	r.Post("/api/import/{domain}", ImportHandler)

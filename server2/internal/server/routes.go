@@ -392,3 +392,46 @@ func Worflow_Handler(w http.ResponseWriter, r *http.Request) {
 	go tools.RunWorkFlow(TargetVal.Target)
 	writeJSON(w, http.StatusOK, map[string]string{"status": "started"})
 }
+
+func JsTool_Handler(w http.ResponseWriter, r *http.Request) {
+	hostURL, _ := url.QueryUnescape(chi.URLParam(r, "hostURL"))
+	domain := chi.URLParam(r, "domain")
+
+	switch r.Method {
+	case http.MethodPost:
+		id := uuid.NewString()
+		slog.Info("js scrape and scan started", "host", hostURL, "id", id)
+		go tools.ScrapeAndScan(hostURL, id, domain)
+		writeJSON(w, http.StatusOK, map[string]string{"id": id})
+
+	case http.MethodGet:
+		results, err := database.GetJsResults(domain, hostURL)
+		if err != nil {
+			slog.Error("failed to get js results", "host", hostURL, "err", err)
+			writeJSON(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+			return
+		}
+		writeJSON(w, http.StatusOK, results)
+	}
+}
+
+func ToolStatus_Handler(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	if id == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "missing id"})
+		return
+	}
+	job, ok := tools.GetJob(id)
+	if !ok {
+		writeJSON(w, http.StatusNotFound, map[string]string{"status": "not_found"})
+		return
+	}
+	switch job.Status {
+	case tools.JobPending:
+		writeJSON(w, http.StatusOK, map[string]string{"status": "pending"})
+	case tools.JobDone:
+		writeJSON(w, http.StatusOK, map[string]string{"status": "done"})
+	case tools.JobFailed:
+		writeJSON(w, http.StatusOK, map[string]string{"status": "failed", "error": job.Error})
+	}
+}
