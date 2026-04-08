@@ -55,8 +55,7 @@ func runKatana(tmpDir, id, hostURL string) {
 		"-u", hostURL,
 		"-d", "2",
 		"-jc",
-		"-hl",
-		"-nos")
+		"-hl")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return
