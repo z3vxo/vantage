@@ -135,7 +135,7 @@ func ListDomains(target string) {
 		return
 	}
 
-	const chunkSize = 10
+	const chunkSize = 15
 	for i := 0; i < len(names); i += chunkSize {
 		end := i + chunkSize
 		if end > len(names) {
@@ -143,8 +143,8 @@ func ListDomains(target string) {
 		}
 		chunk := names[i:end]
 		msg := fmt.Sprintf("[*] Domains (%d-%d / %d):\n", i+1, end, len(names))
-		for _, n := range chunk {
-			msg += "[+] <u>" + n + "</u>\n"
+		for _, e := range chunk {
+			msg += fmt.Sprintf("[+] <u>%s</u> %s\n", e.Name, e.StatusCode)
 		}
 		SendTelegram(msg)
 	}
