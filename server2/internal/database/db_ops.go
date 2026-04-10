@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"path/filepath"
 	"sync"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -158,17 +159,21 @@ func DeleteData(domain string) error {
 	slog.Debug("Deleting Data", "domain", domain)
 
 	dbPath := dbPath(domain)
-
-	err := os.Remove(dbPath)
-	if err != nil {
+	if err := os.Remove(dbPath); err != nil {
 		slog.Error("Failed Deleting Data", "path", dbPath)
 		return err
 	}
-
 	slog.Info("Deleted Data", "path", dbPath)
 
-	return nil
+	home, _ := os.UserHomeDir()
+	reconDir := filepath.Join(home, ".recon", domain)
+	if err := os.RemoveAll(reconDir); err != nil {
+		slog.Error("Failed deleting recon dir", "path", reconDir, "err", err)
+		return err
+	}
+	slog.Info("Deleted recon dir", "path", reconDir)
 
+	return nil
 }
 
 func WriteNote(target string, hostURL string, note string) error {
