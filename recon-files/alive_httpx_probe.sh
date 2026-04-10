@@ -18,7 +18,12 @@ subs_dir="$HOME/.recon/$DOMAIN/subdomains"
 httpx_dir="$HOME/.recon/$DOMAIN/probe/httpx"
 
 PORTS="80,443,2082,2083,2086,2087,3000,3001,3443,4200,4443,4567,5000,5001,5443,5601,7080,7443,8000,8001,8008,8080,8081,8082,8083,8090,8181,8443,8800,8834,8888,9000,9090,9200,9443,10000,10443"
-
+match_codes="200,201,204,301,302,401,403,409,429,405"
+user_agent="User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+accpet_hdr="Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avf,image/webp,*/*;q=0.8"
+accept_langHdr="Accept-Language: en-US,en;q=0.5"
+accept_contentHdr="Accept-Encoding: gzip, deflate, br"
+conn_hdr="Connection: keep-alive"
 
 RED='\e[31m'; GREEN='\e[32m'; YELLOW='\e[33m'; BLUE='\e[34m'
 BOLD="\e[1m"; ENDCOLOR='\e[0m'
@@ -48,8 +53,14 @@ httpx_enrich() {
         -p "$PORTS" \
         -t 200 \
         -rl 500 \
+        -random-agent \
+        -H "$accpet_hdr" \
+        -H "$accept_langHdr" \
+        -H "$accept_contentHdr" \
+        -H "$conn_hdr" \
         -timeout 3 \
         -retries 0 \
+        -mc "$match_codes" \
         -status-code \
         -title \
         -tech-detect \
@@ -123,6 +134,11 @@ path_probe() {
         -mc 200 \
         -status-code \
         -content-length \
+        -random-agent \
+        -H "$accpet_hdr" \
+        -H "$accept_langHdr" \
+        -H "$accept_contentHdr" \
+        -H "$conn_hdr" \
         -json \
         -o "$httpx_dir/${DOMAIN}_path_hits_raw.json" > /dev/null 2>&1 || true
 

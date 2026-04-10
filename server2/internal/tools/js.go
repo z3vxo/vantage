@@ -71,12 +71,12 @@ func runKatana(tmpDir, id, hostURL string, headless bool) {
 	os.WriteFile(fileName, out, 0644)
 }
 
-func deDupeAndExtract(tmpDir, hostURL, id string) error {
+func deDupeAndExtract(tmpDir, hostURL, id, urlsPath string) error {
 	hostname, err := extractHostname(hostURL)
 	if err != nil {
 		return err
 	}
-	cmd := fmt.Sprintf("cat %s/%s_*.txt | sort -u | grep -iE '\\.js(\\?|$)' | grep '%s' > %s/%s_js.txt", tmpDir, id, hostname, tmpDir, id)
+	cmd := fmt.Sprintf("cat %s/%s_*.txt | sort -u | grep -iE '\\.js(\\?|$)' | grep '%s' > %s", tmpDir, id, hostname, urlsPath)
 	if out, err := exec.Command("sh", "-c", cmd).CombinedOutput(); err != nil {
 		if exitErr, ok := err.(*exec.ExitError); !ok || exitErr.ExitCode() != 1 {
 			return fmt.Errorf("dedup failed: %w — %s", err, string(out))
@@ -85,26 +85,19 @@ func deDupeAndExtract(tmpDir, hostURL, id string) error {
 	return nil
 }
 
-func ScrapeJsFiles(hostURL, domain, tmpDir, id string) error {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return fmt.Errorf("failed to get home dir: %w", err)
-	}
-
-	jsDir := fmt.Sprintf("%s/.recon/%s/%s/js", home, domain, SanitizeForFilename(hostURL))
+func ScrapeJsFiles(hostURL, domain, jsDir, urlsPath string) error {
 	if err := os.MkdirAll(jsDir, 0755); err != nil {
 		return fmt.Errorf("failed to create js dir: %w", err)
 	}
 
-	jsList := fmt.Sprintf("%s/%s_js.txt", tmpDir, id)
-	info, err := os.Stat(jsList)
+	info, err := os.Stat(urlsPath)
 	if os.IsNotExist(err) || (err == nil && info.Size() == 0) {
 		slog.Info("js: no JS URLs found, skipping download", "host", hostURL)
 		return nil
 	}
 
 	cmd := exec.Command("httpx",
-		"-l", jsList,
+		"-l", urlsPath,
 		"-sr",
 		"-srd", jsDir,
 		"-mc", "200",
@@ -282,6 +275,16 @@ func ScrapeAndScan(host, id, domain string, headless bool) {
 		return
 	}
 
+	home, _ := os.UserHomeDir()
+	jsDir := fmt.Sprintf("%s/.recon/%s/%s/js", home, domain, SanitizeForFilename(host))
+	urlsPath := jsDir + "/js_urls.txt"
+
+	// ensure jsDir exists before writing urlsPath into it
+	if err := os.MkdirAll(jsDir, 0755); err != nil {
+		SetJob(id, JobResult{Status: JobFailed, Error: err.Error()})
+		return
+	}
+
 	var wg sync.WaitGroup
 	wg.Add(3)
 	go func() { defer wg.Done(); runGau(tmpDir, id, host) }()
@@ -289,25 +292,22 @@ func ScrapeAndScan(host, id, domain string, headless bool) {
 	go func() { defer wg.Done(); runKatana(tmpDir, id, host, headless) }()
 	wg.Wait()
 
-	if err := deDupeAndExtract(tmpDir, host, id); err != nil {
+	if err := deDupeAndExtract(tmpDir, host, id, urlsPath); err != nil {
 		SetJob(id, JobResult{Status: JobFailed, Error: err.Error()})
 		return
 	}
 
-	jsList := fmt.Sprintf("%s/%s_js.txt", tmpDir, id)
-	if info, err := os.Stat(jsList); err == nil {
+	if info, err := os.Stat(urlsPath); err == nil {
 		slog.Info("js: dedup complete", "host", host, "js_list_bytes", info.Size())
 	} else {
 		slog.Warn("js: no JS URLs found after dedup", "host", host)
 	}
 
-	if err := ScrapeJsFiles(host, domain, tmpDir, id); err != nil {
+	if err := ScrapeJsFiles(host, domain, jsDir, urlsPath); err != nil {
 		SetJob(id, JobResult{Status: JobFailed, Error: err.Error()})
 		return
 	}
 
-	home, _ := os.UserHomeDir()
-	jsDir := fmt.Sprintf("%s/.recon/%s/%s/js", home, domain, SanitizeForFilename(host))
 	if entries, err := os.ReadDir(jsDir + "/response"); err == nil {
 		slog.Info("js: files downloaded", "host", host, "count", len(entries))
 	} else {
@@ -320,5 +320,6 @@ func ScrapeAndScan(host, id, domain string, headless bool) {
 	}
 
 	os.RemoveAll(tmpDir)
+	os.RemoveAll(jsDir + "/response")
 	SetJob(id, JobResult{Status: JobDone})
 }

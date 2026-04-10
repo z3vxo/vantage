@@ -251,25 +251,75 @@ function HostJsPanel({ domain, host }: { domain: string; host: Host }) {
   )
 }
 
+// ── Sidebar grouping ───────────────────────────────────────────────────────
+
+const GROUP_ORDER = ['2xx', '3xx', '4xx', '5xx', 'other']
+
+function statusGroup(status: string): string {
+  if (status.startsWith('2')) return '2xx'
+  if (status.startsWith('3')) return '3xx'
+  if (status.startsWith('4')) return '4xx'
+  if (status.startsWith('5')) return '5xx'
+  return 'other'
+}
+
+const groupColor: Record<string, string> = {
+  '2xx': 'var(--green)',
+  '3xx': 'var(--orange)',
+  '4xx': 'var(--red)',
+  '5xx': 'var(--yellow)',
+  'other': 'var(--text-muted)',
+}
+
+type SidebarItem =
+  | { type: 'header'; group: string; count: number }
+  | { type: 'host'; host: Host }
+
 // ── JS tab ─────────────────────────────────────────────────────────────────
 
 export default function JSTab({ domain, hosts }: Props) {
   const [activeId, setActiveId] = useState<number | null>(null)
   const [filter, setFilter] = useState('')
-  const [collapsed, setCollapsed] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
   const scrollRef = useRef<HTMLDivElement>(null)
+
+  function toggleGroup(g: string) {
+    setCollapsedGroups(prev => {
+      const next = new Set(prev)
+      next.has(g) ? next.delete(g) : next.add(g)
+      return next
+    })
+  }
 
   const filtered = useMemo(
     () => filter ? hosts.filter(h => h.url.toLowerCase().includes(filter.toLowerCase())) : hosts,
     [hosts, filter]
   )
 
+  const items = useMemo<SidebarItem[]>(() => {
+    const map: Record<string, Host[]> = {}
+    for (const h of filtered) {
+      const g = statusGroup(h.status)
+      ;(map[g] ??= []).push(h)
+    }
+    const result: SidebarItem[] = []
+    for (const g of GROUP_ORDER) {
+      if (!map[g]?.length) continue
+      result.push({ type: 'header', group: g, count: map[g].length })
+      if (!collapsedGroups.has(g)) {
+        for (const h of map[g]) result.push({ type: 'host', host: h })
+      }
+    }
+    return result
+  }, [filtered, collapsedGroups])
+
   const activeHost = hosts.find(h => h.id === activeId) ?? null
 
   const rowVirtualizer = useVirtualizer({
-    count: filtered.length,
+    count: items.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => 58,
+    estimateSize: (i) => items[i]?.type === 'header' ? 34 : 58,
     overscan: 8,
   })
 
@@ -281,9 +331,9 @@ export default function JSTab({ domain, hosts }: Props) {
   return (
     <div className="overview-layout">
       {/* Sidebar */}
-      <div className={`overview-sidebar${collapsed ? ' collapsed' : ''}`}>
+      <div className={`overview-sidebar${sidebarCollapsed ? ' collapsed' : ''}`}>
         <div className="sidebar-header">
-          {!collapsed && (
+          {!sidebarCollapsed && (
             <div className="sidebar-search-wrap">
               <input
                 type="text"
@@ -295,18 +345,53 @@ export default function JSTab({ domain, hosts }: Props) {
           )}
           <button
             className="sidebar-collapse-btn"
-            onClick={() => setCollapsed(c => !c)}
-            title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            onClick={() => setSidebarCollapsed(c => !c)}
+            title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
-            {collapsed ? '▶' : '◀'}
+            {sidebarCollapsed ? '▶' : '◀'}
           </button>
         </div>
 
-        {!collapsed && (
+        {!sidebarCollapsed && (
           <div ref={scrollRef} className="sidebar-list">
             <div style={{ height: rowVirtualizer.getTotalSize(), position: 'relative' }}>
               {rowVirtualizer.getVirtualItems().map(vr => {
-                const h = filtered[vr.index]
+                const item = items[vr.index]
+                if (item.type === 'header') {
+                  return (
+                    <div
+                      key={`grp-${item.group}`}
+                      onClick={() => toggleGroup(item.group)}
+                      style={{
+                        position: 'absolute', top: vr.start, width: '100%', height: vr.size,
+                        display: 'flex', alignItems: 'center', gap: 8,
+                        padding: '0 12px',
+                        cursor: 'pointer',
+                        background: 'var(--surface)',
+                        borderBottom: '1px solid var(--border2)',
+                        userSelect: 'none',
+                        boxSizing: 'border-box',
+                      }}
+                    >
+                      <span style={{ fontSize: 9, color: 'var(--text-dim)', width: 8 }}>
+                        {collapsedGroups.has(item.group) ? '▶' : '▼'}
+                      </span>
+                      <span style={{
+                        fontFamily: "'Fira Code', monospace",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: groupColor[item.group],
+                      }}>
+                        {item.group}
+                      </span>
+                      <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                        {item.count}
+                      </span>
+                    </div>
+                  )
+                }
+
+                const h = item.host
                 return (
                   <div
                     key={h.id}
