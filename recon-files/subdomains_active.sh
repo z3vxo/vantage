@@ -73,7 +73,6 @@ resolve_dns() {
     --resolvers "$temp_dir/$resolvers_name" \
     --resolvers-trusted "$temp_dir/$trusted_resolvers_name" \
     --rate-limit 10000 --rate-limit-trusted 2000 \
-    --wildcard-tests 20 --wildcard-batch 1000000 \
     -w "$active_dir/alive.txt" \
     || { echo -e "${BOLD}${RED}[!]${ENDCOLOR} puredns failed" >&2; exit 1; }
 
@@ -81,31 +80,6 @@ resolve_dns() {
     || { echo -e "${BOLD}${RED}[!]${ENDCOLOR} puredns resolved no domains" >&2; exit 1; }
 
   echo -e "${BOLD}${GREEN}[*]${ENDCOLOR} Alive: ${BOLD}$(wc -l < "$active_dir/alive.txt")${ENDCOLOR} / $(wc -l < "$subs_dir/all_subs.txt")"
-
-  # Retry pass — re-resolve anything that didn't make it into alive.txt
-  # Catches transient resolver failures at high rate limits
-  local missed="$temp_dir/missed.txt"
-  comm -23 \
-    <(sort "$subs_dir/all_subs.txt") \
-    <(sort "$active_dir/alive.txt") \
-    > "$missed"
-
-  if [[ -s "$missed" ]]; then
-    echo -e "${BOLD}${BLUE}[+]${ENDCOLOR} Retrying $(wc -l < "$missed") missed domains at lower rate..."
-    puredns resolve "$missed" \
-      --resolvers "$temp_dir/$resolvers_name" \
-      --resolvers-trusted "$temp_dir/$trusted_resolvers_name" \
-      --rate-limit 500 --rate-limit-trusted 100 \
-      --wildcard-tests 20 --wildcard-batch 1000000 \
-      -w "$temp_dir/alive_retry.txt" > /dev/null 2>&1 || true
-
-    if [[ -s "$temp_dir/alive_retry.txt" ]]; then
-      echo -e "${BOLD}${GREEN}[+]${ENDCOLOR} Retry recovered: ${BOLD}$(wc -l < "$temp_dir/alive_retry.txt")${ENDCOLOR} domains"
-      cat "$active_dir/alive.txt" "$temp_dir/alive_retry.txt" | sort -u > "$temp_dir/alive_merged.txt"
-      mv "$temp_dir/alive_merged.txt" "$active_dir/alive.txt"
-    fi
-    rm -f "$missed" "$temp_dir/alive_retry.txt"
-  fi
 }
 
 
@@ -134,8 +108,7 @@ subfinder_pass2() {
       --resolvers "$temp_dir/$resolvers_name" \
       --resolvers-trusted "$temp_dir/$trusted_resolvers_name" \
       --rate-limit 10000 --rate-limit-trusted 2000 \
-      --wildcard-tests 20 --wildcard-batch 1000000 \
-      -w "$active_dir/alive.txt" > /dev/null 2>&1 || true
+        -w "$active_dir/alive.txt" > /dev/null 2>&1 || true
     echo -e "${BOLD}${GREEN}[*]${ENDCOLOR} Alive after second pass: ${BOLD}$(wc -l < "$active_dir/alive.txt")${ENDCOLOR}"
   else
     echo -e "${BOLD}${YELLOW}[!]${ENDCOLOR} Second pass found no new subdomains"
@@ -165,7 +138,6 @@ resolve_mutated() {
     --resolvers "$temp_dir/$resolvers_name" \
     --resolvers-trusted "$temp_dir/$trusted_resolvers_name" \
     --rate-limit 10000 --rate-limit-trusted 2000 \
-    --wildcard-tests 20 --wildcard-batch 1000000 \
     -w "$active_dir/alive_mutated.txt" \
     || { echo -e "${BOLD}${RED}[!]${ENDCOLOR} puredns (mutated) failed" >&2; exit 1; }
 
