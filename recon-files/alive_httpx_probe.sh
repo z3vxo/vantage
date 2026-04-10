@@ -18,7 +18,7 @@ subs_dir="$HOME/.recon/$DOMAIN/subdomains"
 httpx_dir="$HOME/.recon/$DOMAIN/probe/httpx"
 
 PORTS="80,443,2082,2083,2086,2087,3000,3001,3443,4200,4443,4567,5000,5001,5443,5601,7080,7443,8000,8001,8008,8080,8081,8082,8083,8090,8181,8443,8800,8834,8888,9000,9090,9200,9443,10000,10443"
-match_codes="200,201,204,301,302,401,403,409,429,405"
+match_codes="200,201,204,301,302,401,403,404,405,407,409,429,503"
 accept_hdr="Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
 accept_lang_hdr="Accept-Language: en-US,en;q=0.5"
 accept_enc_hdr="Accept-Encoding: gzip, deflate, br, zstd"
