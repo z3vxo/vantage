@@ -122,8 +122,8 @@ func reconHome() string {
 	return home + "/.recon"
 }
 
-func dbDir() string  { return reconHome() + "/databases" }
-func DbDir() string  { return dbDir() }
+func dbDir() string               { return reconHome() + "/databases" }
+func DbDir() string               { return dbDir() }
 func dbPath(domain string) string { return dbDir() + "/" + domain + "_db.sql" }
 
 func getDB(domain string) (*sql.DB, error) {

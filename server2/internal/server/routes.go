@@ -18,20 +18,6 @@ import (
 	"github.com/z3vxo/vantage/internal/tools"
 )
 
-type TriageData struct {
-	Domain string `json:"domain"`
-	Status string `json:"status"`
-}
-
-type NewTargetJson struct {
-	Domain string `json:"domain"`
-}
-
-type NoteStruct struct {
-	Domain string `json:"domain"`
-	Note   string `json:"notes"`
-}
-
 func realIP(r *http.Request) string {
 	if ip := r.Header.Get("X-Real-IP"); ip != "" {
 		return ip
@@ -267,11 +253,6 @@ func authMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-type LoginData struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
 var sessionsFile = func() string {
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -369,10 +350,6 @@ func GoAway_Handler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte(`<html><body>Stop looking here</body></html>`))
-}
-
-type Target struct {
-	Target string `json:"target"`
 }
 
 func Worflow_Handler(w http.ResponseWriter, r *http.Request) {

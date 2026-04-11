@@ -6,6 +6,12 @@ interface CountEntry {
   count: number
 }
 
+interface AsnResult {
+  asn: string
+  holder: string
+  prefixes: string[]
+}
+
 interface SummaryData {
   total_hosts: number
   unique_ips: number
@@ -141,6 +147,23 @@ export default function SummaryTab({ domain }: { domain: string }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const [asnInput, setAsnInput] = useState('')
+  const [asnData, setAsnData] = useState<AsnResult | null>(null)
+  const [asnLoading, setAsnLoading] = useState(false)
+  const [asnError, setAsnError] = useState<string | null>(null)
+
+  function lookupAsn() {
+    const asn = asnInput.trim().replace(/^AS/i, '')
+    if (!asn) return
+    setAsnLoading(true)
+    setAsnError(null)
+    setAsnData(null)
+    fetchApi(`/api/${encodeURIComponent(domain)}/asn/AS${asn}`)
+      .then(r => r.json())
+      .then(d => { setAsnData(d); setAsnLoading(false) })
+      .catch(e => { setAsnError(e.message); setAsnLoading(false) })
+  }
+
   useEffect(() => {
     setLoading(true)
     fetchApi(`/api/${encodeURIComponent(domain)}/summary`)
@@ -262,35 +285,54 @@ export default function SummaryTab({ domain }: { domain: string }) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div style={{ display: 'flex', gap: 8 }}>
               <input
-                placeholder="e.g. 13335"
-                disabled
+                placeholder="e.g. 13335 or AS13335"
+                value={asnInput}
+                onChange={e => setAsnInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && lookupAsn()}
                 style={{
                   flex: 1,
                   background: 'var(--surface2)',
                   border: '1px solid var(--border2)',
-                  color: 'var(--text-muted)',
+                  color: 'var(--text)',
                   padding: '6px 10px',
                   borderRadius: 6,
                   fontSize: 12,
                   fontFamily: "'Fira Code', monospace",
-                  cursor: 'not-allowed',
                 }}
               />
-              <button disabled style={{
-                background: 'var(--surface2)',
-                border: '1px solid var(--border2)',
-                color: 'var(--text-muted)',
-                padding: '6px 14px',
-                borderRadius: 6,
-                fontSize: 12,
-                cursor: 'not-allowed',
-              }}>
-                Lookup
+              <button
+                onClick={lookupAsn}
+                disabled={asnLoading}
+                style={{
+                  background: 'var(--accent)',
+                  border: 'none',
+                  color: 'var(--bg)',
+                  padding: '6px 14px',
+                  borderRadius: 6,
+                  fontSize: 12,
+                  cursor: asnLoading ? 'not-allowed' : 'pointer',
+                  opacity: asnLoading ? 0.6 : 1,
+                  fontWeight: 600,
+                }}>
+                {asnLoading ? '...' : 'Lookup'}
               </button>
             </div>
-            <div style={{ fontSize: 11, color: 'var(--text-muted)', fontStyle: 'italic' }}>
-              ASN lookup coming soon
-            </div>
+            {asnError && (
+              <div style={{ fontSize: 11, color: 'var(--red)' }}>{asnError}</div>
+            )}
+            {asnData && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ fontSize: 12, color: 'var(--text)', fontWeight: 600 }}>{asnData.holder}</div>
+                <div style={{ fontSize: 11, color: 'var(--text-muted)', fontFamily: "'Fira Code', monospace" }}>
+                  {asnData.prefixes.length} announced prefix{asnData.prefixes.length !== 1 ? 'es' : ''}
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, maxHeight: 140, overflowY: 'auto' }}>
+                  {asnData.prefixes.map(p => (
+                    <div key={p} style={{ fontSize: 11, fontFamily: "'Fira Code', monospace", color: 'var(--text-dim)' }}>{p}</div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </Card>
 

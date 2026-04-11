@@ -34,6 +34,7 @@ func Run() {
 
 	r.Post("/api/{domain}/host/{hostURL}/js", JsTool_Handler)
 	r.Get("/api/{domain}/host/{hostURL}/js", JsTool_Handler)
+	r.Post("/api/{domain}/asn/{asn}", Asn_Handler)
 
 	r.Get("/api/tools/status", ToolStatus_Handler)
 	r.Post("/api/workflow", Worflow_Handler)
