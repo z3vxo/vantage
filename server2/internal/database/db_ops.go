@@ -73,29 +73,43 @@ func migrateDB(db *sql.DB) {
 }
 
 func backfillJunctionTables(db *sql.DB) {
+	type domainRow struct {
+		id     int
+		ips    string
+		cname  string
+		tech   string
+		badges string
+	}
+
 	rows, err := db.Query(`SELECT id, ips, cname, tech_stack, badges FROM domains`)
 	if err != nil {
 		return
 	}
-	defer rows.Close()
 
+	// Read ALL rows into memory first, then close the cursor before writing.
+	// SQLite cannot safely interleave reads and writes on the same connection.
+	var data []domainRow
 	for rows.Next() {
-		var id int
-		var ips, cname, tech, badges string
-		if err := rows.Scan(&id, &ips, &cname, &tech, &badges); err != nil {
+		var r domainRow
+		if err := rows.Scan(&r.id, &r.ips, &r.cname, &r.tech, &r.badges); err != nil {
 			continue
 		}
-		for _, v := range splitTrim(ips) {
-			db.Exec(`INSERT OR IGNORE INTO domain_ips (domain_id, ip) VALUES (?, ?)`, id, v)
+		data = append(data, r)
+	}
+	rows.Close()
+
+	for _, r := range data {
+		for _, v := range splitTrim(r.ips) {
+			db.Exec(`INSERT OR IGNORE INTO domain_ips (domain_id, ip) VALUES (?, ?)`, r.id, v)
 		}
-		for _, v := range splitTrim(cname) {
-			db.Exec(`INSERT OR IGNORE INTO domain_cnames (domain_id, cname) VALUES (?, ?)`, id, v)
+		for _, v := range splitTrim(r.cname) {
+			db.Exec(`INSERT OR IGNORE INTO domain_cnames (domain_id, cname) VALUES (?, ?)`, r.id, v)
 		}
-		for _, v := range splitTrim(tech) {
-			db.Exec(`INSERT OR IGNORE INTO domain_tech (domain_id, tech) VALUES (?, ?)`, id, v)
+		for _, v := range splitTrim(r.tech) {
+			db.Exec(`INSERT OR IGNORE INTO domain_tech (domain_id, tech) VALUES (?, ?)`, r.id, v)
 		}
-		for _, v := range splitTrim(badges) {
-			db.Exec(`INSERT OR IGNORE INTO domain_badges (domain_id, badge) VALUES (?, ?)`, id, v)
+		for _, v := range splitTrim(r.badges) {
+			db.Exec(`INSERT OR IGNORE INTO domain_badges (domain_id, badge) VALUES (?, ?)`, r.id, v)
 		}
 	}
 }
@@ -121,14 +135,24 @@ func getDB(domain string) (*sql.DB, error) {
 	}
 
 	Path := dbPath(domain)
-	db, err := sql.Open("sqlite3", Path)
+	db, err := sql.Open("sqlite3", Path+"?_busy_timeout=5000")
 	if err != nil {
 		return nil, fmt.Errorf("failed to open database: %w", err)
 	}
 
+	// Serialize all SQLite access through a single connection.
+	// SQLite does not support concurrent writers; a pool > 1 causes SQLITE_BUSY.
+	db.SetMaxOpenConns(1)
+	db.SetMaxIdleConns(1)
+
 	if err := db.Ping(); err != nil {
 		return nil, fmt.Errorf("failed to connect to database: %w", err)
 	}
+
+	// WAL mode allows concurrent reads without blocking, which helps
+	// when the frontend fetches multiple endpoints simultaneously.
+	db.Exec("PRAGMA journal_mode=WAL")
+	db.Exec("PRAGMA synchronous=NORMAL")
 
 	migrateDB(db)
 	connections[domain] = db
