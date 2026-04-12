@@ -44,7 +44,6 @@ interface ToastState {
 // ── Host JS panel (presentational) ────────────────────────────────────────
 
 function HostJsPanel({
-  domain,
   host,
   scan,
   onStartScan,
