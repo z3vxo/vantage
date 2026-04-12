@@ -49,7 +49,6 @@ function HostJsPanel({
   scan,
   onStartScan,
 }: {
-  domain: string
   host: Host
   scan: ScanState
   onStartScan: (headless: boolean) => void
@@ -489,7 +488,6 @@ export default function JSTab({ domain, hosts }: Props) {
         {activeHost ? (
           <HostJsPanel
             key={activeHost.id}
-            domain={domain}
             host={activeHost}
             scan={scans.get(activeHost.url) ?? { phase: 'idle' }}
             onStartScan={(headless) => startScan(activeHost.url, headless)}
