@@ -29,6 +29,25 @@ func SaveJsResults(domain, hostURL string, secrets []JsSecret, links []JsLink) e
 		return err
 	}
 
+	// Clear previous results for this host before inserting fresh ones
+	_, err = tx.Exec(`
+		DELETE FROM js_secrets WHERE js_file_id IN (SELECT id FROM js_files WHERE host_url = ?)
+	`, hostURL)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	_, err = tx.Exec(`DELETE FROM js_links WHERE js_file_id IN (SELECT id FROM js_files WHERE host_url = ?)`, hostURL)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+	_, err = tx.Exec(`DELETE FROM js_files WHERE host_url = ?`, hostURL)
+	if err != nil {
+		tx.Rollback()
+		return err
+	}
+
 	// Track file path → row id so secrets/links can reference it
 	fileIDs := map[string]int64{}
 

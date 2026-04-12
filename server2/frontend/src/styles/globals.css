@@ -508,6 +508,7 @@ body {
 .badge-red    { background: var(--red-dim);    color: var(--red);    border: 1px solid #7f1d1d; }
 .badge-orange { background: var(--orange-dim); color: var(--orange); border: 1px solid #7c2d12; }
 .badge-yellow { background: var(--yellow-dim); color: var(--yellow); border: 1px solid #713f12; }
+.badge-green  { background: var(--green-dim);  color: var(--green);  border: 1px solid #14532d; }
 .triage-btns { display: flex; gap: 5px; flex-wrap: wrap; }
 .triage-btn {
   background: transparent; border: 1px solid var(--border2);

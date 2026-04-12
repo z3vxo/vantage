@@ -35,85 +35,26 @@ interface ScanState {
   error?: string
 }
 
-// ── JS scan hook ───────────────────────────────────────────────────────────
-
-function useJsScan(domain: string, hostURL: string, headless: boolean) {
-  const [scan, setScan] = useState<ScanState>({ phase: 'idle' })
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
-  const enc = encodeURIComponent
-
-  function stopPolling() {
-    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null }
-  }
-
-  useEffect(() => {
-    stopPolling()
-    setScan({ phase: 'idle' })
-
-    // Load existing results if a previous scan was run
-    fetchApi(`/api/${enc(domain)}/host/${enc(hostURL)}/js`)
-      .then(r => r.json())
-      .then(d => {
-        if (d.secrets || d.links) {
-          setScan({ phase: 'done', result: { secrets: d.secrets ?? [], links: d.links ?? [] } as JsResult })
-        }
-      })
-      .catch(() => {})
-
-    return stopPolling
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [domain, hostURL])
-
-  async function startScan() {
-    if (pollRef.current) return
-    setScan({ phase: 'polling' })
-    try {
-      const r = await fetchApi(`/api/${enc(domain)}/host/${enc(hostURL)}/js`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ headless }),
-      })
-      if (!r.ok) { setScan({ phase: 'failed', error: 'Failed to start scan' }); return }
-      const data = await r.json()
-      const jobId: string = data.id
-      setScan({ phase: 'polling', jobId })
-
-      pollRef.current = setInterval(async () => {
-        try {
-          const r2 = await fetchApi(`/api/tools/status?id=${jobId}`)
-          const d = await r2.json()
-          if (d.status === 'done') {
-            stopPolling()
-            try {
-              const r3 = await fetchApi(`/api/${enc(domain)}/host/${enc(hostURL)}/js`)
-              const result = await r3.json()
-              setScan({ phase: 'done', jobId, result: { secrets: result.secrets ?? [], links: result.links ?? [] } as JsResult })
-            } catch {
-              setScan({ phase: 'failed', jobId, error: 'Failed to fetch results' })
-            }
-          } else if (d.status === 'failed') {
-            stopPolling()
-            setScan({ phase: 'failed', jobId, error: d.error || 'Scan failed' })
-          }
-          // pending → keep polling
-        } catch {
-          stopPolling()
-          setScan(prev => ({ ...prev, phase: 'failed', error: 'Network error while polling' }))
-        }
-      }, 5000)
-    } catch {
-      setScan({ phase: 'failed', error: 'Failed to start scan' })
-    }
-  }
-
-  return { scan, startScan }
+interface ToastState {
+  visible: boolean
+  message: string
+  type: 'success' | 'error'
 }
 
-// ── Host JS panel ──────────────────────────────────────────────────────────
+// ── Host JS panel (presentational) ────────────────────────────────────────
 
-function HostJsPanel({ domain, host }: { domain: string; host: Host }) {
+function HostJsPanel({
+  domain,
+  host,
+  scan,
+  onStartScan,
+}: {
+  domain: string
+  host: Host
+  scan: ScanState
+  onStartScan: (headless: boolean) => void
+}) {
   const [headless, setHeadless] = useState(false)
-  const { scan, startScan } = useJsScan(domain, host.url, headless)
 
   const scColor: Record<string, string> = {
     s200: 'var(--green)', s201: 'var(--green)', s301: 'var(--orange)',
@@ -157,7 +98,7 @@ function HostJsPanel({ domain, host }: { domain: string; host: Host }) {
               <button
                 className="ov-action-btn"
                 disabled={scan.phase === 'polling'}
-                onClick={startScan}
+                onClick={() => onStartScan(headless)}
               >
                 {scan.phase === 'polling' ? 'Scanning...' : 'Scrape & Scan'}
               </button>
@@ -284,6 +225,123 @@ export default function JSTab({ domain, hosts }: Props) {
   const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set())
   const scrollRef = useRef<HTMLDivElement>(null)
 
+  // Scan state keyed by hostURL — persists across host/tab switches
+  const [scans, setScans] = useState<Map<string, ScanState>>(new Map())
+  const pollRefs = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map())
+
+  const [toast, setToast] = useState<ToastState>({ visible: false, message: '', type: 'success' })
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const enc = encodeURIComponent
+
+  function showToast(message: string, type: 'success' | 'error') {
+    setToast({ visible: true, message, type })
+    if (toastTimer.current) clearTimeout(toastTimer.current)
+    toastTimer.current = setTimeout(() => setToast(t => ({ ...t, visible: false })), 4000)
+  }
+
+  function setScan(hostURL: string, update: Partial<ScanState> | ((prev: ScanState) => ScanState)) {
+    setScans(prev => {
+      const next = new Map(prev)
+      const current = next.get(hostURL) ?? { phase: 'idle' }
+      next.set(hostURL, typeof update === 'function' ? update(current) : { ...current, ...update })
+      return next
+    })
+  }
+
+  function stopPoll(hostURL: string) {
+    const interval = pollRefs.current.get(hostURL)
+    if (interval) { clearInterval(interval); pollRefs.current.delete(hostURL) }
+  }
+
+  // Load existing results for a host when first selected
+  useEffect(() => {
+    if (activeId === null) return
+    const host = hosts.find(h => h.id === activeId)
+    if (!host) return
+    const hostURL = host.url
+    // Don't overwrite an in-progress or completed scan
+    const existing = scans.get(hostURL)
+    if (existing && existing.phase !== 'idle') return
+
+    fetchApi(`/api/${enc(domain)}/host/${enc(hostURL)}/js`)
+      .then(r => r.json())
+      .then(d => {
+        if ((d.secrets?.length ?? 0) > 0 || (d.links?.length ?? 0) > 0) {
+          setScan(hostURL, {
+            phase: 'done',
+            result: { secrets: d.secrets ?? [], links: d.links ?? [] },
+          })
+        }
+      })
+      .catch(() => {})
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeId])
+
+  // Clean up all polls on unmount
+  useEffect(() => {
+    return () => {
+      pollRefs.current.forEach(interval => clearInterval(interval))
+      if (toastTimer.current) clearTimeout(toastTimer.current)
+    }
+  }, [])
+
+  async function startScan(hostURL: string, headless: boolean) {
+    if (pollRefs.current.has(hostURL)) return
+    setScan(hostURL, { phase: 'polling' })
+
+    try {
+      const r = await fetchApi(`/api/${enc(domain)}/host/${enc(hostURL)}/js`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ headless }),
+      })
+      if (!r.ok) {
+        setScan(hostURL, { phase: 'failed', error: 'Failed to start scan' })
+        return
+      }
+      const data = await r.json()
+      const jobId: string = data.id
+      setScan(hostURL, { phase: 'polling', jobId })
+
+      const interval = setInterval(async () => {
+        try {
+          const r2 = await fetchApi(`/api/tools/status?id=${jobId}`)
+          const d = await r2.json()
+          if (d.status === 'done') {
+            stopPoll(hostURL)
+            try {
+              const r3 = await fetchApi(`/api/${enc(domain)}/host/${enc(hostURL)}/js`)
+              const result = await r3.json()
+              const secrets: JsSecret[] = result.secrets ?? []
+              const links: JsLink[] = result.links ?? []
+              setScan(hostURL, { phase: 'done', jobId, result: { secrets, links } })
+              showToast(
+                `JS scan done — ${hostURL}: ${secrets.length} secret${secrets.length !== 1 ? 's' : ''}, ${links.length} link${links.length !== 1 ? 's' : ''}`,
+                'success'
+              )
+            } catch {
+              setScan(hostURL, { phase: 'failed', jobId, error: 'Failed to fetch results' })
+              showToast(`JS scan failed for ${hostURL}`, 'error')
+            }
+          } else if (d.status === 'failed') {
+            stopPoll(hostURL)
+            setScan(hostURL, { phase: 'failed', jobId, error: d.error || 'Scan failed' })
+            showToast(`JS scan failed for ${hostURL}`, 'error')
+          }
+        } catch {
+          stopPoll(hostURL)
+          setScan(hostURL, prev => ({ ...prev, phase: 'failed', error: 'Network error while polling' }))
+          showToast(`JS scan failed for ${hostURL}`, 'error')
+        }
+      }, 5000)
+
+      pollRefs.current.set(hostURL, interval)
+    } catch {
+      setScan(hostURL, { phase: 'failed', error: 'Failed to start scan' })
+    }
+  }
+
   function toggleGroup(g: string) {
     setCollapsedGroups(prev => {
       const next = new Set(prev)
@@ -392,6 +450,7 @@ export default function JSTab({ domain, hosts }: Props) {
                 }
 
                 const h = item.host
+                const scanPhase = scans.get(h.url)?.phase
                 return (
                   <div
                     key={h.id}
@@ -407,6 +466,12 @@ export default function JSTab({ domain, hosts }: Props) {
                       >
                         {h.status}
                       </span>
+                      {scanPhase === 'polling' && (
+                        <span className="badge badge-yellow">scanning</span>
+                      )}
+                      {scanPhase === 'done' && (
+                        <span className="badge badge-green">scanned</span>
+                      )}
                       {h.badges?.map(b => (
                         <span key={b} className="badge badge-yellow">{b}</span>
                       ))}
@@ -422,11 +487,25 @@ export default function JSTab({ domain, hosts }: Props) {
       {/* Main content */}
       <div className="overview-main">
         {activeHost ? (
-          <HostJsPanel key={activeHost.id} domain={domain} host={activeHost} />
+          <HostJsPanel
+            key={activeHost.id}
+            domain={domain}
+            host={activeHost}
+            scan={scans.get(activeHost.url) ?? { phase: 'idle' }}
+            onStartScan={(headless) => startScan(activeHost.url, headless)}
+          />
         ) : (
           <div className="overview-empty-msg">← Select a host to analyse its JavaScript</div>
         )}
       </div>
+
+      {/* Toast */}
+      {toast.visible && (
+        <div className={`toast ${toast.type}`}>
+          <span className={`toast-icon ${toast.type}`}>{toast.type === 'success' ? '✓' : '✕'}</span>
+          {toast.message}
+        </div>
+      )}
     </div>
   )
 }

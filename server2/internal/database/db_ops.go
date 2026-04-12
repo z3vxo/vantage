@@ -241,6 +241,24 @@ func CreateNewTarget(name string) error {
 			badge TEXT NOT NULL,
 			UNIQUE(domain_id, badge)
 		)`,
+		`CREATE TABLE IF NOT EXISTS js_files (
+			id        INTEGER PRIMARY KEY AUTOINCREMENT,
+			host_url  TEXT,
+			file_path TEXT
+		)`,
+		`CREATE TABLE IF NOT EXISTS js_secrets (
+			id          INTEGER PRIMARY KEY AUTOINCREMENT,
+			js_file_id  INTEGER,
+			secret_type TEXT,
+			value       TEXT,
+			FOREIGN KEY(js_file_id) REFERENCES js_files(id)
+		)`,
+		`CREATE TABLE IF NOT EXISTS js_links (
+			id         INTEGER PRIMARY KEY AUTOINCREMENT,
+			js_file_id INTEGER,
+			url        TEXT,
+			FOREIGN KEY(js_file_id) REFERENCES js_files(id)
+		)`,
 	} {
 		if _, err := db.Exec(ddl); err != nil {
 			return err
