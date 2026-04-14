@@ -17,6 +17,8 @@ DOMAIN=$1
 subs_dir="$HOME/.recon/$DOMAIN/subdomains"
 httpx_dir="$HOME/.recon/$DOMAIN/probe/httpx"
 
+proxy_check_file="$HOME/.config/isproxy.txt"
+
 PORTS="80,443,2082,2083,2086,2087,3000,3001,3443,4200,4443,4567,5000,5001,5443,5601,7080,7443,8000,8001,8008,8080,8081,8082,8083,8090,8181,8443,8800,8834,8888,9000,9090,9200,9443,10000,10443"
 match_codes="200,201,204,301,302,401,403,404,405,407,409,429,503"
 accept_hdr="Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
@@ -32,6 +34,14 @@ sf_user_hdr="Sec-Fetch-User: ?1"
 
 RED='\e[31m'; GREEN='\e[32m'; YELLOW='\e[33m'; BLUE='\e[34m'
 BOLD="\e[1m"; ENDCOLOR='\e[0m'
+
+PROXY_FLAG=()
+_proxy=$(cat "$proxy_check_file" 2>/dev/null | tr -d '[:space:]')
+if [[ -n "$_proxy" ]]; then
+    PROXY_FLAG=(-proxy "$_proxy")
+    echo -e "${BOLD}${YELLOW}[~]${ENDCOLOR} Proxy active: $_proxy"
+fi
+unset _proxy
 
 mkdir -p "$httpx_dir"
 rm -f "$httpx_dir/${DOMAIN}_httpx_enriched.json" "$httpx_dir/${DOMAIN}_path_targets.txt" "$httpx_dir/${DOMAIN}_path_hits_raw.json" "$httpx_dir/${DOMAIN}_path_hits.txt"
@@ -81,6 +91,7 @@ httpx_enrich() {
         -cname \
         -location \
         -json \
+        "${PROXY_FLAG[@]}" \
         -o "$httpx_dir/${DOMAIN}_httpx_raw.json" > /dev/null 2>&1 || true
 
     # Drop alt-port entries that are just redirects to the canonical HTTPS site
@@ -157,6 +168,7 @@ path_probe() {
         -H "$sf_site_hdr" \
         -H "$sf_user_hdr" \
         -json \
+        "${PROXY_FLAG[@]}" \
         -o "$httpx_dir/${DOMAIN}_path_hits_raw.json" > /dev/null 2>&1 || true
 
     python3 - "$httpx_dir/${DOMAIN}_path_hits_raw.json" <<'EOF' > "$httpx_dir/${DOMAIN}_path_hits.txt"
