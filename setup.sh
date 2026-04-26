@@ -1,10 +1,7 @@
 #!/bin/bash
 set -e
 
-# ============================================
-# Bug Bounty VPS Setup Script
-# Paste into Vultr startup script field
-# ============================================
+
 
 export DEBIAN_FRONTEND="noninteractive"
 export HOME="/root"
@@ -92,7 +89,6 @@ wget -q "https://raw.githubusercontent.com/danielmiessler/SecLists/master/Discov
 # — Done —
 echo ""
 echo "========================================="
-echo " VPS Setup Complete!"
 echo " Tools: nmap, masscan, subfinder, httpx,"
 echo "        nuclei, puredns, massdns, amass,"
 echo "        alterx, asnmap, katana, gowitness"
